@@ -1,17 +1,25 @@
 ## HomeNetSafe
-Team Becrux submission for CSULB Project Starbound
+Team Becrux submission for CSULB Project Starbound, currently ran as a script with modules to be installed but will be containarized via Docker to run as a "one click" application on user devices 
 
 ### Getting Started
-sample text 
+Currently configured to run on windows, but easily translated into Linux/MacOS systems. 
+
+Windows Users only 
+- Please be sure to install NPCAP to run program
+MacOS/Linus Users only
+- Please replace "wifi" on line 28 to "ens33"
 
 ### Installation
-1. sample text
-2. sample text
+run the following to install scapy module
+"pip install scapy"
+
    
 ### Usage
+Run "ipconfig" within command line
+replace x on line 28 with IPv4 address
 
 ### Roadmap
-- [x] Scan for Devices/ Device Discovery
+- [x] LAN Device Discovery
+- [ ] Tying devices to manufacturer and device names 
 - [ ] Scan for New/Unknown Devices/ Alerts on a new device.
-- [ ] 
 
