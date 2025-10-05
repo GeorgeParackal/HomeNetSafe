@@ -1,1 +1,2 @@
+click_spinner==0.1.10
 scapy==2.6.1
