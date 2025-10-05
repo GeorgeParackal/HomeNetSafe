@@ -11,13 +11,19 @@ MacOS/Linus Users only
 - Please replace "wifi" on line 28 to "ens33"
 
 ### Installation
-run the following to install scapy module
-"pip install scapy"
+run the following in command line/powershell
 
-   
+- `pip install scapy`
+- `pip install click_spinner`
+- `pip install mac_vendor_lookup`
+
+If on windows, instal "Npcap" from browser
+
 ### Usage
-Run "ipconfig" within command line
-replace x on line 28 with IPv4 address
+Run `ipconfig` within command line
+replace x on line 75 with IPv4 address 
+<img width="625" height="620" alt="image" src="https://github.com/user-attachments/assets/677295f0-f836-4656-8d0a-a2a5897a5068" />
+<img width="597" height="86" alt="image" src="https://github.com/user-attachments/assets/d7fc0626-fa61-47fc-b945-76d2f13a12ca" />
 
 ### Roadmap
 - [x] LAN Device Discovery
