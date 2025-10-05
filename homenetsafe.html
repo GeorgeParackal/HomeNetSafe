@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HomeNetSafe — Static Futuristic UI</title>
+<style>
+  /* ================= HUD / Sci‑Fi Theme (cyan) ================= */
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg:#05070b;
+    --panel:#0a0f14;         /* deep panel */
+    --panel-2:#081018;       /* row */
+    --line:#0b2733;          /* grid lines */
+    --txt:#eaf8ff;           /* high-contrast text */
+    --muted:#8fd0e6;         /* muted */
+    --cyan:#00e5ff;          /* primary neon */
+    --cyan-2:#22bde5;        /* accent */
+    --rose:#ff6b8a;
+    --amber:#ffc555;
+    --danger:#ff3b58;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--txt); background:radial-gradient(1200px 600px at 50% -10%, #052433 0%, #05070b 60%);
+  }
+  /* Subtle scanlines + hex grid */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0,transparent 5px,rgba(0,229,255,.04) 6px),
+    radial-gradient(circle at 10% 10%, rgba(0,229,255,.06), transparent 35%),
+    radial-gradient(circle at 90% 30%, rgba(0,229,255,.04), transparent 40%);
+    mix-blend-mode:screen}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;background-image: linear-gradient(90deg, rgba(0,229,255,.07) 1px, transparent 1px), linear-gradient(0deg, rgba(0,229,255,.07) 1px, transparent 1px);
+    background-size: 60px 60px; opacity:.12}
+
+  .container{max-width:1200px;margin:0 auto;padding:24px}
+  .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(5,7,11,.85),rgba(5,7,11,.65));backdrop-filter:blur(8px);border-bottom:1px solid rgba(0,229,255,.18)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-icon{position:relative;width:40px;height:40px;border-radius:8px;display:grid;place-items:center;
+    background:linear-gradient(135deg,rgba(0,229,255,.14),rgba(17,37,49,.4));
+    border:1px solid rgba(0,229,255,.45);
+    box-shadow:0 0 0 1px rgba(0,229,255,.25),0 0 24px rgba(0,229,255,.25),inset 0 0 30px rgba(0,229,255,.12);
+    color:#00232b}
+  .brand-title{font-weight:800;letter-spacing:.2px}
+  .search{display:flex;gap:8px;align-items:center}
+  .input{width:340px;max-width:52vw;background:rgba(4,12,18,.75);border:1px solid rgba(0,229,255,.25);color:var(--txt);
+    border-radius:10px;padding:10px 12px;outline-offset:2px;box-shadow:inset 0 0 12px rgba(0,229,255,.08)}
+  .btn{cursor:default;border:1px solid rgba(0,229,255,.35);background:linear-gradient(90deg,var(--cyan),var(--cyan-2));
+    color:#001a20;border-radius:10px;padding:10px 14px;font-weight:700;letter-spacing:.2px;box-shadow:0 0 24px rgba(0,229,255,.35)}
+  .toolbar{display:flex;gap:12px;align-items:center}
+
+  /* ---------------- HUD Tabs ---------------- */
+  .tabs{margin-top:18px;border:1px solid rgba(0,229,255,.22);border-radius:12px;padding:6px;background:rgba(6,14,20,.6);
+    box-shadow:inset 0 0 0 1px rgba(0,229,255,.08)}
+  .tab-labels{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+  .tab-label{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-radius:10px;color:var(--muted);
+    background:linear-gradient(180deg,rgba(3,10,16,.6),rgba(6,14,20,.2));border:1px solid rgba(0,229,255,.12);font-weight:700;text-transform:uppercase;font-size:12px}
+  .tab-label::before,.tab-label::after{content:"";position:absolute;width:10px;height:10px;border:1px solid rgba(0,229,255,.35)}
+  .tab-label::before{left:6px;top:6px;border-right:0;border-bottom:0}
+  .tab-label::after{right:6px;bottom:6px;border-left:0;border-top:0}
+  .tab-label:hover{border-color:rgba(0,229,255,.28)}
+  input[type="radio"]{display:none}
+  .panes{margin-top:16px}
+  .pane{display:none}
+  /* active styles */
+  #tab-overview:checked ~ .tabs .tab-label[for="tab-overview"],
+  #tab-networks:checked ~ .tabs .tab-label[for="tab-networks"],
+  #tab-devices:checked ~ .tabs .tab-label[for="tab-devices"],
+  #tab-risks:checked ~ .tabs .tab-label[for="tab-risks"],
+  #tab-control:checked ~ .tabs .tab-label[for="tab-control"],
+  #tab-settings:checked ~ .tabs .tab-label[for="tab-settings"]{
+    color:#eaffff;background:linear-gradient(180deg,rgba(0,229,255,.22),rgba(0,229,255,.08));
+    border-color:rgba(0,229,255,.45); box-shadow:0 0 22px rgba(0,229,255,.25), inset 0 0 0 1px rgba(0,229,255,.25)}
+  #tab-overview:checked ~ .panes #pane-overview,
+  #tab-networks:checked ~ .panes #pane-networks,
+  #tab-devices:checked ~ .panes #pane-devices,
+  #tab-risks:checked ~ .panes #pane-risks,
+  #tab-control:checked ~ .panes #pane-control,
+  #tab-settings:checked ~ .panes #pane-settings{display:block}
+
+  /* ---------------- HUD Cards ---------------- */
+  .grid{display:grid;gap:16px}
+  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  @media (max-width:1024px){.grid-4,.grid-3{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:640px){.grid-4,.grid-3{grid-template-columns:1fr} }
+  .card{background:var(--panel);border:1px solid rgba(0,229,255,.18);border-radius:12px;padding:16px;position:relative}
+  .card::before,.card::after{content:"";position:absolute;width:12px;height:12px;border:1px solid rgba(0,229,255,.35)}
+  .card::before{left:10px;top:10px;border-right:0;border-bottom:0}
+  .card::after{right:10px;bottom:10px;border-left:0;border-top:0}
+  .card h3{margin:0 0 6px;font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:#baf2ff}
+  .muted{color:var(--muted);font-size:12px}
+  .stat{font-size:28px;font-weight:800;color:#9ffcff;text-shadow:0 0 18px rgba(0,229,255,.35)}
+  .progress{height:12px;border-radius:8px;background:#03131a;border:1px solid rgba(0,229,255,.18);overflow:hidden;box-shadow:inset 0 0 10px rgba(0,229,255,.08)}
+  .bar{height:100%;background:repeating-linear-gradient(90deg,rgba(0,229,255,.85) 0 14px, rgba(0,229,255,.55) 14px 28px)}
+  .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(0,229,255,.35);border-radius:999px;padding:3px 8px;font-size:12px;background:rgba(0,229,255,.08);color:#baf2ff;box-shadow:inset 0 0 8px rgba(0,229,255,.15)}
+  .bd-low{--glow:rgba(0,229,255,.35)}
+  .bd-med{border-color:rgba(255,197,85,.45);color:#ffe7b0;background:rgba(255,197,85,.08)}
+  .bd-high{border-color:rgba(255,59,88,.55);color:#ffc4cf;background:rgba(255,59,88,.08)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .btn-ghost{border:1px solid rgba(0,229,255,.25);background:rgba(3,10,16,.6);color:var(--txt);padding:8px 10px;border-radius:10px}
+
+  /* ---------------- Tables ---------------- */
+  table{width:100%;border-collapse:separate;border-spacing:0 10px}
+  thead th{font-size:11px;color:#9ad9ee;letter-spacing:.3px;text-transform:uppercase;text-align:left;padding:0 12px}
+  tbody td{background:var(--panel-2);border:1px solid rgba(0,229,255,.18);padding:10px 12px}
+  tbody tr td:first-child{border-radius:10px 0 0 10px}
+  tbody tr td:last-child{border-radius:0 10px 10px 0}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,229,255,.28);font-size:12px;color:#baf2ff;background:rgba(0,229,255,.06)}
+
+  /* ---------------- Key/Value helper ---------------- */
+  .kv{display:grid;grid-template-columns:160px 1fr;gap:8px;margin-top:8px}
+  .kv div{padding:6px 0;border-bottom:1px dashed rgba(0,229,255,.18)}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container row" style="padding:12px 24px">
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <div class="brand-title">HomeNetSafe</div>
+          <div class="muted">Futuristic local network security UI (static)</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input class="input" placeholder="Search devices, risks, networks…" />
+        <button class="btn">Quick Scan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Hidden radios control tabs -->
+    <input type="radio" name="tabs" id="tab-overview" checked>
+    <input type="radio" name="tabs" id="tab-networks">
+    <input type="radio" name="tabs" id="tab-devices">
+    <input type="radio" name="tabs" id="tab-risks">
+    <input type="radio" name="tabs" id="tab-control">
+    <input type="radio" name="tabs" id="tab-settings">
+
+    <div class="tabs">
+      <div class="tab-labels">
+        <label class="tab-label" for="tab-overview">Overview</label>
+        <label class="tab-label" for="tab-networks">Networks</label>
+        <label class="tab-label" for="tab-devices">Devices</label>
+        <label class="tab-label" for="tab-risks">Risks</label>
+        <label class="tab-label" for="tab-control">Control</label>
+        <label class="tab-label" for="tab-settings">Settings</label>
+      </div>
+    </div>
+
+    <div class="panes">
+      <!-- =============== OVERVIEW =============== -->
+      <section id="pane-overview" class="pane">
+        <div class="grid grid-4">
+          <div class="card"><h3>Overall Health</h3><div class="stat">Good</div><div class="muted">Aggregate across networks</div></div>
+          <div class="card"><h3>Devices</h3><div class="stat">43</div><div class="muted">Discovered on all networks</div></div>
+          <div class="card"><h3>Networks</h3><div class="stat">3</div><div class="muted">Home networks on this device</div></div>
+          <div class="card"><h3>Open Ports</h3><div class="stat">14</div><div class="muted">Across all scanned devices</div></div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top:16px">
+          <div class="card" style="grid-column:span 2">
+            <h3>Live Scanner (placeholder)</h3>
+            <div class="muted">Actively scans for open ports, default/weak passwords, outdated banners.</div>
+            <div style="margin:12px 0">
+              <div class="muted" style="margin-bottom:6px">Current Scan Progress</div>
+              <div class="progress"><div class="bar" style="width:62%"></div></div>
+            </div>
+            <div class="grid grid-3">
+              <div class="card" style="padding:12px"><div class="muted">Credential checks</div><span class="badge bd-low">running</span></div>
+              <div class="card" style="padding:12px"><div class="muted">Banner grab</div><span class="badge bd-med">queued</span></div>
+              <div class="card" style="padding:12px"><div class="muted">mDNS/SSDP</div><span class="badge bd-med">paused</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Top Risks</h3>
+            <div class="card" style="padding:12px"><div class="row"><b>Camera RTSP exposed</b><span class="badge bd-high">High</span></div><div class="muted">Port 554 open on 192.168.0.66. Tip: restrict to LAN.</div></div>
+            <div class="card" style="padding:12px"><div class="row"><b>Weak Wi‑Fi cipher</b><span class="badge bd-med">Medium</span></div><div class="muted">SSID advertises WPA (TKIP). Tip: use WPA2/WPA3 AES.</div></div>
+            <div class="card" style="padding:12px"><div class="row"><b>Default creds suspected</b><span class="badge bd-low">Low</span></div><div class="muted">Change default password; disable uPnP if unused.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== NETWORKS =============== -->
+      <section id="pane-networks" class="pane">
+        <div class="row" style="margin-bottom:8px">
+          <div class="muted">All home networks on this device</div>
+          <div class="toolbar"><input class="input" placeholder="Filter networks…"><button class="btn-ghost">Add Network</button></div>
+        </div>
+        <div class="grid grid-3">
+          <div class="card">
+            <div class="row"><h3>Home / C‑137</h3><span class="badge bd-low">Protected</span></div>
+            <div class="muted">18 devices • Risk score</div>
+            <div class="progress" style="margin-top:10px"><div class="bar" style="width:88%"></div></div>
+            <div class="muted" style="font-size:11px;margin-top:6px">Lower is better. Current: 12</div>
+            <div style="margin-top:10px" class="row"><button class="btn-ghost">Scan</button><button class="btn-ghost">Configure</button></div>
+          </div>
+          <div class="card">
+            <div class="row"><h3>Citadel Dorm</h3><span class="badge bd-med">Scanning</span></div>
+            <div class="muted">7 devices • Risk score</div>
+            <div class="progress" style="margin-top:10px"><div class="bar" style="width:68%"></div></div>
+            <div class="muted" style="font-size:11px;margin-top:6px">Lower is better. Current: 32</div>
+            <div style="margin-top:10px" class="row"><button class="btn-ghost">Scan</button><button class="btn-ghost">Configure</button></div>
+          </div>
+          <div class="card">
+            <div class="row"><h3>Garage Lab</h3><span class="badge bd-med" style="color:#ffd89a">Attention</span></div>
+            <div class="muted">11 devices • Risk score</div>
+            <div class="progress" style="margin-top:10px"><div class="bar" style="width:42%"></div></div>
+            <div class="muted" style="font-size:11px;margin-top:6px">Lower is better. Current: 58</div>
+            <div style="margin-top:10px" class="row"><button class="btn-ghost">Scan</button><button class="btn-ghost">Configure</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== DEVICES =============== -->
+      <section id="pane-devices" class="pane">
+        <div class="card">
+          <h3>Devices on Home / C‑137</h3>
+          <div class="muted">Identifies device type using banners, mDNS/SSDP, and fingerprints (UI only)</div>
+          <div style="overflow:auto;margin-top:12px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>IP</th>
+                  <th>MAC</th>
+                  <th>Manufacturer</th>
+                  <th>First Seen</th>
+                  <th>Last Seen</th>
+                  <th>Risk</th>
+                  <th>Open Ports</th>
+                  <th>Banner</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Portal Gun Hub</td>
+                  <td>Router</td>
+                  <td>192.168.0.1</td>
+                  <td>AA:BB:CC:DD:EE:01</td>
+                  <td>SciLink</td>
+                  <td>12d ago</td>
+                  <td>2m ago</td>
+                  <td><span class="badge bd-low">Low</span></td>
+                  <td>80, 443</td>
+                  <td>OpenWRT 22.x</td>
+                  <td style="text-align:right"><span class="pill">Block</span> <span class="pill">Pause</span></td>
+                </tr>
+                <tr>
+                  <td>Meeseeks Speaker</td>
+                  <td>Speaker</td>
+                  <td>192.168.0.42</td>
+                  <td>AA:BB:CC:DD:EE:42</td>
+                  <td>MrBox</td>
+                  <td>8d ago</td>
+                  <td>10m ago</td>
+                  <td><span class="badge bd-med">Medium</span></td>
+                  <td>8008</td>
+                  <td>uPnP / mDNS</td>
+                  <td style="text-align:right"><span class="pill">Block</span> <span class="pill">Pause</span></td>
+                </tr>
+                <tr>
+                  <td>Garage Cam</td>
+                  <td>Camera</td>
+                  <td>192.168.0.66</td>
+                  <td>AA:BB:CC:DD:EE:66</td>
+                  <td>OptiView</td>
+                  <td>21d ago</td>
+                  <td>1h ago</td>
+                  <td><span class="badge bd-high">High</span></td>
+                  <td>554</td>
+                  <td>RTSP 1.0</td>
+                  <td style="text-align:right"><span class="pill">Block</span> <span class="pill">Pause</span></td>
+                </tr>
+                <tr>
+                  <td>Smart Bulb</td>
+                  <td>Bulb</td>
+                  <td>192.168.0.77</td>
+                  <td>AA:BB:CC:DD:EE:77</td>
+                  <td>GlowCo</td>
+                  <td>6d ago</td>
+                  <td>5m ago</td>
+                  <td><span class="badge bd-low">Low</span></td>
+                  <td>—</td>
+                  <td>SSDP / mDNS</td>
+                  <td style="text-align:right"><span class="pill">Block</span> <span class="pill">Pause</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <h3>Device Detail — example fields</h3>
+            <div class="kv">
+              <div class="muted">Hostname</div><div>portal-hub</div>
+              <div class="muted">IPv4</div><div>192.168.0.1</div>
+              <div class="muted">MAC</div><div>AA:BB:CC:DD:EE:01</div>
+              <div class="muted">Manufacturer</div><div>SciLink</div>
+              <div class="muted">First Discovered</div><div>2025‑07‑08 14:12</div>
+              <div class="muted">Last Seen</div><div>2025‑10‑05 09:22</div>
+              <div class="muted">Services</div><div>HTTP, HTTPS, DNS</div>
+              <div class="muted">Protocols</div><div>mDNS, SSDP</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Explainable Risk — example</h3>
+            <p class="muted">Why a device is risky + remediation tips.</p>
+            <div class="card" style="padding:12px"><div class="row"><b>RTSP exposed on camera</b><span class="badge bd-high">High</span></div><div class="muted">Exposed port 554 allows streaming from outside LAN. Mitigation: close port, place device on isolated VLAN.</div></div>
+            <div class="card" style="padding:12px"><div class="row"><b>Outdated Wi‑Fi security</b><span class="badge bd-med">Medium</span></div><div class="muted">Network advertises WPA (TKIP). Upgrade to WPA2/WPA3 AES and rotate passphrase.</div></div>
+          </div>
+          <div class="card">
+            <h3>What front‑end data to show (reference)</h3>
+            <ul class="muted">
+              <li>Device: name, hostname, type, icon</li>
+              <li>Network info: IP, MAC, Manufacturer/OUI</li>
+              <li>Discovery: first seen, last seen, time online</li>
+              <li>Risk: level (Low/Medium/High), score, reasons</li>
+              <li>Fingerprint: banners (HTTP, RTSP, SSH), protocols (mDNS/SSDP)</li>
+              <li>Open ports & common services</li>
+              <li>Controls (UI only): Block / Pause / Rename / Notes</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== RISKS =============== -->
+      <section id="pane-risks" class="pane">
+        <div class="grid grid-3">
+          <div class="card" style="grid-column:span 2">
+            <h3>Explainable Risk Report</h3>
+            <div class="card" style="padding:12px"><div class="row"><b>RTSP exposed</b><span class="badge bd-high">High</span></div><div class="muted">Camera at 192.168.0.66 exposes RTSP. Restrict or close.</div></div>
+            <div class="card" style="padding:12px"><div class="row"><b>WPA (TKIP) detected</b><span class="badge bd-med">Medium</span></div><div class="muted">Upgrade SSID to WPA2/WPA3 AES.</div></div>
+            <div class="card" style="padding:12px"><div class="row"><b>Default password suspected</b><span class="badge bd-low">Low</span></div><div class="muted">Change credentials; disable uPnP if unused.</div></div>
+          </div>
+          <div class="card">
+            <h3>Protocol Checks</h3>
+            <div class="row"><span>Outdated Wi‑Fi security</span><span class="badge bd-med">flagged</span></div>
+            <div class="row"><span>Open port exposure</span><span class="badge bd-high">found</span></div>
+            <div class="row"><span>mDNS / SSDP fingerprint</span><span class="badge bd-low">observed</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== CONTROL =============== -->
+      <section id="pane-control" class="pane">
+        <div class="card">
+          <h3>Device Control (simulated)</h3>
+          <div class="muted">Block or pause devices/services. UI only; switches are disabled.</div>
+          <div class="grid grid-3" style="margin-top:12px">
+            <div class="card"><div class="row"><b>Portal Gun Hub</b><span class="badge bd-low">OK</span></div><div class="muted">192.168.0.1 • Router</div><div style="margin-top:10px" class="row"><span class="pill">Block</span><span class="pill">Pause</span></div></div>
+            <div class="card"><div class="row"><b>Garage Cam</b><span class="badge bd-high">High</span></div><div class="muted">192.168.0.66 • Camera</div><div style="margin-top:10px" class="row"><span class="pill">Block</span><span class="pill">Pause</span></div></div>
+            <div class="card"><div class="row"><b>Meeseeks Speaker</b><span class="badge bd-med">Med</span></div><div class="muted">192.168.0.42 • Speaker</div><div style="margin-top:10px" class="row"><span class="pill">Block</span><span class="pill">Pause</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== SETTINGS =============== -->
+      <section id="pane-settings" class="pane">
+        <div class="grid grid-3">
+          <div class="card">
+            <h3>App Preferences</h3>
+            <div class="row"><span>Portal glow animations</span><span class="pill">On</span></div>
+            <div class="row"><span>Show remediation tips</span><span class="pill">On</span></div>
+            <div class="row"><span>Auto‑scan new devices</span><span class="pill">Off</span></div>
+          </div>
+          <div class="card">
+            <h3>Danger Zone</h3>
+            <button class="btn-ghost" style="border-color:#6b2530;color:#ffb1bf">Reset risk data (UI only)</button>
+            <div style="height:8px"></div>
+            <button class="btn-ghost" style="border-color:#6b4e25;color:#ffd79c">Forget network configs (UI only)</button>
+          </div>
+          <div class="card">
+            <h3>Data you can collect (front‑end framing)</h3>
+            <ul class="muted">
+              <li>Networks: SSID/Name, channel/band, cipher (WEP/WPA/WPA2/WPA3), last scan time, risk score</li>
+              <li>Devices: name, type, icon, IP(v4/v6), MAC, OUI/Manufacturer</li>
+              <li>Discovery: first seen, last seen, uptime estimate, network joined on</li>
+              <li>Security: risk level/score, reasons, remediation suggestions</li>
+              <li>Services: open ports, service names, banner strings, TLS info</li>
+              <li>Protocols: mDNS/SSDP/UPnP fingerprints, DHCP hostnames</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
