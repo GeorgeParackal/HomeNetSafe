@@ -25,7 +25,7 @@ def arp_scan(interface, ips, timeout=2, retries=3):
 
     print("\n[->] Scan Complete. Duration:", datetime.now() - start)
 
-arp_scan("Wi-Fi", "192.168.1.2/24", timeout=3, retries=4)
+arp_scan("Wi-Fi", "x/24", timeout=3, retries=4)
 
 #change to ens33 for linux of rasberry pi os, wifi adapter is for windows. 
 #use yours IPv4 Address found with the ipconfig command, this dervies network range based on device IP address
