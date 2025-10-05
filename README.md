@@ -24,6 +24,7 @@ replace x on line 28 with IPv4 address
 - [ ] Tying devices to manufacturer and device names 
 - [ ] Scan for New/Unknown Devices/Alerts on a new device/Unanaswered Packets
 - [ ] Frontend UI, user should not have to replace anything within code or find there IPv4 address 
+- [ ] Raspberry Pi OS localization
 
 
 ### Project Schematics
