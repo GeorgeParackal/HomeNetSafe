@@ -6,6 +6,7 @@ Currently configured to run on windows, but easily translated into Linux/MacOS s
 
 Windows Users only 
 - Please be sure to install NPCAP to run program
+
 MacOS/Linus Users only
 - Please replace "wifi" on line 28 to "ens33"
 
