@@ -2,6 +2,9 @@ from datetime import datetime
 from click_spinner import spinner
 from scapy.all import srp, Ether, ARP, conf
 import time
+from mac_vendor_lookup import MacLookup, VendorNotFoundError
+
+
 
 GREEN = "\033[32m"
 RESET = "\033[0m"
@@ -30,6 +33,15 @@ banner = r"""
                       ######                      
                                                 
 """
+
+mac_lookup=MacLookup()
+
+try: 
+    mac_lookup.update_vendors()
+except Exception:
+    pass
+
+
 def arp_scan(interface, ips, timeout=2, retries=3):
     print("[->] Scanning")
     start = datetime.now()
@@ -49,7 +61,11 @@ def arp_scan(interface, ips, timeout=2, retries=3):
 
     print("\n[->] IP - MAC Address")
     for ip, mac in sorted(found.items()):
-        print(f"{ip} - {mac}")
+        try: 
+            vendor = mac_lookup.lookup(mac)
+        except VendorNotFoundError:
+            vendor = "vendor not found"
+        print(f"{ip} - {mac} - {vendor}")
 
     print("\n[->] Scan Complete. Duration:", datetime.now() - start)
 
