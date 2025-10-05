@@ -11,7 +11,7 @@ sample text
 ### Usage
 
 ### Roadmap
-- [x] Example 1
-- [ ] Example 2
-- [ ] Example 3
+- [x] Scan for Devices/ Device Discovery
+- [ ] Scan for New/Unknown Devices/ Alerts on a new device.
+- [ ] 
 
