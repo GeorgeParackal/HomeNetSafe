@@ -1,6 +1,5 @@
-<p align="center">                         
-    ![Logo](<Project Logo Temp.png>)   
-</p>                               
+                        
+[Logo](<Project Logo Temp.png>)                                
 
 Team Becrux submission for CSULB Project Starbound, currently ran as a script with modules to be installed but will be containarized via Docker to run as a "one click" application on user devices 
 
