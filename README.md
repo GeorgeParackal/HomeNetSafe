@@ -12,8 +12,29 @@ Windows Users only
 MacOS/Linus Users only
 - Please replace "wifi" on line 28 to "ens33"
 
+### How to run the program on Windows
+
+Navigate to the correct folder in VSCode
+
+Open the terminal and make sure you are in the folder that contains the requirements.txt file.
+cd /path/to/your/project
+
+Make a venv (if you haven't made one yet) by running:
+python -m venv HNS_venv
+
+Activate the venv by running:
+HNS_venv\Scripts\activate
+
+Install all dependencies to the venv using:
+pip install -r requirements.txt
+
+Make sure you are using the right interpreter by
+- clicking on View>Command Palette
+- type in interpreter and click on "Python: Select Interpreter"
+- click on the option that contains 'HNS_venv' in the name
+
 ### Installation
-run the following in command line/powershell
+run the following in command line/powershell (skip if followed "How to run the program on Windows" steps)
 
 - `pip install scapy`
 - `pip install click_spinner`
