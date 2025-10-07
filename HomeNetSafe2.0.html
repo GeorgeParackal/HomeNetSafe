@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HomeNetSafe</title>
+<style>
+  /* ====== Minimal theme ====== */
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg:#0b0f14;
+    --panel:#0f141b;
+    --ink:#e9f6ff;
+    --muted:#9fc9db;
+    --accent:#00e5ff;
+    --line:rgba(0,229,255,.18);
+    --matrix:#08f76f;
+  }
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #07212c, var(--bg) 60%);color:var(--ink);
+       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial}
+
+  /* subtle grid */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.08;
+    background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px),
+                     linear-gradient(0deg,var(--line) 1px,transparent 1px);
+    background-size:48px 48px}
+
+  .container{max-width:1100px;margin:0 auto;padding:16px}
+
+  /* ====== Top bar ====== */
+  .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(11,15,20,.9),rgba(11,15,20,.65));backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+  /* Small 3D logo (always top-left) */
+  .brand{display:flex;align-items:center;gap:10px}
+  .cube{
+    width:38px;height:38px;border-radius:10px;position:relative;transform-style:preserve-3d;
+    background:linear-gradient(135deg,rgba(0,229,255,.18),rgba(17,37,49,.35));
+    border:1px solid rgba(0,229,255,.45);box-shadow:0 0 24px rgba(0,229,255,.35), inset 0 0 30px rgba(0,229,255,.15);
+    display:grid;place-items:center;color:#032c33;font-weight:900;letter-spacing:.5px;perspective:800px;
+    animation:tilt 6s ease-in-out infinite;
+  }
+  @keyframes tilt{0%{transform:rotateX(12deg) rotateY(-18deg)}50%{transform:rotateX(18deg) rotateY(12deg)}100%{transform:rotateX(12deg) rotateY(-18deg)}}
+  .brand h1{margin:0;font-size:16px;font-weight:800}
+  .muted{color:var(--muted);font-size:12px}
+
+  /* ====== Tabs (4 only) ====== */
+  input[type=radio]{display:none}
+  .tabs{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:6px;background:rgba(6,14,20,.5)}
+  .tab-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .tab-label{display:flex;align-items:center;justify-content:center;padding:10px;border-radius:10px;
+    font-weight:700;text-transform:uppercase;font-size:12px;color:var(--muted);
+    border:1px solid rgba(0,229,255,.12);background:rgba(3,10,16,.5);cursor:pointer}
+  .tab-label:hover{border-color:rgba(0,229,255,.3)}
+  .panes{margin-top:14px}
+  .pane{display:none}
+
+  /* active label */
+  #tab-home:checked ~ .tabs .tab-label[for="tab-home"],
+  #tab-scan:checked ~ .tabs .tab-label[for="tab-scan"],
+  #tab-devices:checked ~ .tabs .tab-label[for="tab-devices"],
+  #tab-settings:checked ~ .tabs .tab-label[for="tab-settings"]{
+    color:#eaffff;background:linear-gradient(180deg,rgba(0,229,255,.2),rgba(0,229,255,.06));
+    border-color:rgba(0,229,255,.45);box-shadow:0 0 18px rgba(0,229,255,.25), inset 0 0 0 1px rgba(0,229,255,.25)}
+  #tab-home:checked ~ .panes #pane-home,
+  #tab-scan:checked ~ .panes #pane-scan,
+  #tab-devices:checked ~ .panes #pane-devices,
+  #tab-settings:checked ~ .panes #pane-settings{display:block}
+
+  /* ====== Cards / Controls (minimal) ====== */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+
+  /* ====== HOME: big centered 3D logo ====== */
+  .hero{
+    min-height:52vh;display:grid;place-items:center;position:relative;margin-top:8px;
+  }
+  .logo3d{
+    width:240px;height:240px;border-radius:28px;display:grid;place-items:center;cursor:pointer;
+    transform-style:preserve-3d;perspective:1200px;
+    background:radial-gradient(120% 120% at 30% 30%, rgba(0,229,255,.22), rgba(0,229,255,.06) 40%, rgba(0,0,0,.0) 60%),
+               linear-gradient(135deg, rgba(0,229,255,.18), rgba(17,37,49,.35));
+    border:1px solid rgba(0,229,255,.45);
+    box-shadow:
+      0 0 36px rgba(0,229,255,.35),
+      inset 0 0 60px rgba(0,229,255,.15),
+      inset 0 0 0 2px rgba(0,229,255,.15);
+    animation:float 7s ease-in-out infinite;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .logo3d:active{transform:scale(.98)}
+  @keyframes float{0%{transform:rotateX(14deg) rotateY(-18deg) translateZ(0)}
+                   50%{transform:rotateX(18deg) rotateY(14deg) translateZ(10px)}
+                   100%{transform:rotateX(14deg) rotateY(-18deg) translateZ(0)}}
+
+  .logo-text{
+    font-weight:900;font-size:28px;letter-spacing:.6px;color:#eaffff;text-shadow:
+      0 0 18px rgba(0,229,255,.45), 0 0 42px rgba(0,229,255,.25);
+    transform:translateZ(30px);
+  }
+  .hero h2{margin:18px 0 0;font-weight:700;text-align:center;color:var(--muted)}
+  .center{display:grid;place-items:center;text-align:center}
+
+  /* layout helpers */
+  .grid{display:grid;gap:14px}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:800px){.grid-2{grid-template-columns:1fr}}
+
+  /* ====== Fullscreen code-rain overlay ====== */
+  #matrixOverlay{
+    position:fixed;inset:0;background:#000;display:none;z-index:50;
+  }
+  #matrixCanvas{width:100%;height:100%;display:block}
+  #matrixText{
+    position:absolute;inset:0;display:grid;place-items:center;z-index:1;
+    font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink);text-shadow:0 0 22px rgba(8,247,111,.75);
+    font-size:clamp(28px,6vw,72px);
+    opacity:0;transition:opacity .5s ease;
+    pointer-events:none;
+  }
+  #matrixText.show{opacity:1}
+
+  /* ====== Terminal-style output for Scan ====== */
+  .terminal{
+    background:#061017;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px;
+    color:#b7f5c8;
+    font:13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-word;
+    box-shadow: inset 0 0 24px rgba(0,229,255,.08);
+  }
+</style>
+</head>
+<body>
+  <!-- Top bar with small logo on the LEFT -->
+  <div class="topbar">
+    <div class="container row" style="padding:10px 16px">
+      <div class="brand">
+        <div class="cube">🛡️</div>
+        <div>
+          <h1>HomeNetSafe</h1>
+          <div class="muted">Simple local network UI</div>
+        </div>
+      </div>
+      <div class="muted">v1 • minimal demo</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Tabs (only 4) -->
+    <input type="radio" name="tabs" id="tab-home" checked>
+    <input type="radio" name="tabs" id="tab-scan">
+    <input type="radio" name="tabs" id="tab-devices">
+    <input type="radio" name="tabs" id="tab-settings">
+
+    <div class="tabs">
+      <div class="tab-labels">
+        <label class="tab-label" for="tab-home">Home</label>
+        <label class="tab-label" for="tab-scan">Scan</label>
+        <label class="tab-label" for="tab-devices">Devices</label>
+        <label class="tab-label" for="tab-settings">Settings</label>
+      </div>
+    </div>
+
+    <div class="panes">
+      <!-- ===== HOME: big centered 3D logo (clickable) ===== -->
+      <section id="pane-home" class="pane">
+        <div class="hero center">
+          <button class="logo3d" id="enterScan" aria-label="Go to Scan">
+            <div class="logo-text">HomeNetSafe</div>
+          </button>
+          <h2>Clean. Minimal. Just what you need.</h2>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <strong>What’s here?</strong>
+            <ul class="muted" style="margin-top:8px;line-height:1.6">
+              <li>Click the big logo to start</li>
+              <li>Four simple sections — Home, Scan, Devices, Settings</li>
+              <li>Only essential data: Name, IP, MAC</li>
+            </ul>
+          </div>
+          <div class="card center">
+            <div class="muted">Welcome! The logo is your new “Scan” button.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SCAN (output-only) ===== -->
+      <section id="pane-scan" class="pane">
+        <div class="card">
+          <strong>Device Discovery Output</strong>
+          <div style="height:10px"></div>
+          <pre id="scanOutput" class="terminal">Waiting for scan...</pre>
+        </div>
+      </section>
+
+      <!-- ===== DEVICES (short table) ===== -->
+      <section id="pane-devices" class="pane">
+        <div class="card">
+          <strong>Registered Devices</strong>
+          <div style="overflow:auto;margin-top:10px">
+            <table>
+              <thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead>
+              <tbody id="devicesBody">
+                <tr><td>Router</td><td>192.168.1.1</td><td>6C:DD:6C:B1:FF:02</td></tr>
+                <tr><td>Laptop</td><td>192.168.1.11</td><td>4E:4C:29:F6:13:C2</td></tr>
+                <tr><td>Phone</td><td>192.168.1.8</td><td>12:7B:61:25:9B:AD</td></tr>
+                <tr><td>Smart TV</td><td>192.168.1.31</td><td>38:1B:00:E5:99:7E</td></tr>
+                <tr><td>Printer</td><td>192.168.1.5</td><td>D6:A2:FF:F1:5D:CC</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SETTINGS (tiny) ===== -->
+      <section id="pane-settings" class="pane">
+        <div class="grid grid-2">
+          <div class="card">
+            <strong>Preferences</strong>
+            <div style="height:8px"></div>
+            <div class="row"><span class="muted">Show tips</span><button class="btn-ghost" onclick="toggle(this)">On</button></div>
+            <div class="row" style="margin-top:8px"><span class="muted">Auto-scan new devices</span><button class="btn-ghost" onclick="toggle(this)">Off</button></div>
+          </div>
+          <div class="card">
+            <strong>About</strong>
+            <p class="muted" style="margin-top:8px">Static front-end demo. No third-party references. Designed to be clear and simple.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===== Fullscreen overlay for code rain transition ===== -->
+  <div id="matrixOverlay" aria-hidden="true">
+    <canvas id="matrixCanvas"></canvas>
+    <div id="matrixText"></div>
+  </div>
+
+<script>
+  // ===== Config
+  const API_URL = 'http://127.0.0.1:5000/run-script'; // Flask endpoint
+
+  // ===== Tabs helper
+  function switchToScan(){ document.getElementById('tab-scan').checked = true; }
+
+  // ===== Elements
+  const enterScanBtn = document.getElementById('enterScan');
+  const overlay = document.getElementById('matrixOverlay');
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+  const textEl = document.getElementById('matrixText');
+  const scanOutput = document.getElementById('scanOutput');
+
+  let columns = [], drops = [], rafId = null, running = false;
+  let pendingOutput = "Waiting for scan...";
+  let loadingInterval = null;
+
+  function sizeCanvas(){
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.floor(canvas.clientWidth * dpr);
+    canvas.height = Math.floor(canvas.clientHeight * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const columnWidth = 16;
+    columns = Math.ceil(canvas.clientWidth / columnWidth);
+    drops = new Array(columns).fill(0).map(()=> Math.floor(Math.random()*canvas.clientHeight));
+  }
+
+  function drawMatrix(){
+    ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+    ctx.font = "16px monospace";
+    for(let i=0;i<columns;i++){
+      const char = String.fromCharCode(0x30A0 + Math.floor(Math.random()*96));
+      const x = i*16;
+      const y = drops[i]*16;
+      ctx.fillStyle = "rgba(8, 247, 111, 0.9)";
+      ctx.fillText(char, x, y);
+      if (y > canvas.clientHeight && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+    if (running) rafId = requestAnimationFrame(drawMatrix);
+  }
+
+  function showWord(word, visibleMs = 1000){
+    textEl.textContent = word;
+    textEl.classList.add('show');
+    setTimeout(()=>textEl.classList.remove('show'), visibleMs);
+  }
+
+  // ===== Loading pulse logic
+  function startLoadingPulse(){
+    stopLoadingPulse();
+    // First “Loading …” shortly after intro words
+    setTimeout(()=> showWord('Loading ...'), 3000);
+    // Then every 10 seconds
+    loadingInterval = setInterval(()=> showWord('Loading ...'), 10000);
+  }
+  function stopLoadingPulse(){
+    if (loadingInterval){
+      clearInterval(loadingInterval);
+      loadingInterval = null;
+    }
+  }
+
+  function startTransition(){
+    overlay.style.display = 'block';
+    sizeCanvas();
+    running = true;
+    drawMatrix();
+
+    // Sequence: HOME -> NET -> SAFE
+    setTimeout(()=>showWord('HOME', 900), 600);
+    setTimeout(()=>showWord('NET', 900), 1300);
+    setTimeout(()=>showWord('SAFE', 900), 2000);
+
+    // Begin periodic loading pulses after the intro
+    startLoadingPulse();
+  }
+
+  async function runDeviceDiscovery(){
+    // Hit your Flask endpoint that runs "Device Discovery.py"
+    try {
+      scanOutput.textContent = "Running scan...";
+      const r = await fetch(API_URL, { method:'GET', mode:'cors', cache:'no-store' });
+      if(!r.ok){
+        const txt = await r.text().catch(()=> '');
+        throw new Error(`HTTP ${r.status} ${r.statusText}${txt ? ' — ' + txt : ''}`);
+      }
+      const data = await r.json();
+      let out = '';
+      if (data && typeof data.stdout === 'string') out += data.stdout.trim();
+      if (data && data.stderr && data.stderr.trim()) out += (out?'\n\n':'') + '[stderr]\n' + data.stderr.trim();
+      pendingOutput = out || "(no output)";
+    } catch (e) {
+      pendingOutput = "Failed to contact server.\n" + e;
+    }
+  }
+
+  function endMatrixTransitionAndShowOutput(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    stopLoadingPulse();
+    overlay.style.display = 'none';
+    switchToScan();
+    scanOutput.textContent = pendingOutput;
+  }
+
+  // Click the logo: start transition, run Python, then reveal output
+  enterScanBtn?.addEventListener('click', async () => {
+    startTransition();             // start overlay + animation + pulses
+    await runDeviceDiscovery();    // wait for backend to finish
+    showWord('SAFE', 900);         // final flash
+    setTimeout(endMatrixTransitionAndShowOutput, 800);
+  });
+
+  window.addEventListener('resize', ()=>{ if(overlay.style.display==='block') sizeCanvas(); });
+
+  // tiny toggle button
+  function toggle(el){ el.textContent = el.textContent === 'On' ? 'Off' : 'On'; }
+</script>
+</body>
+</html>
