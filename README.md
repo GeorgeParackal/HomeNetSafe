@@ -24,8 +24,8 @@ If on windows, instal "Npcap" from browser
 ### Usage
 Run `ipconfig` within command line
 replace x on line 75 with IPv4 address 
-<img width="625" height="620" alt="image" src="https://github.com/user-attachments/assets/677295f0-f836-4656-8d0a-a2a5897a5068" />
-<img width="597" height="86" alt="image" src="https://github.com/user-attachments/assets/d7fc0626-fa61-47fc-b945-76d2f13a12ca" />
+![temp_IPv4](</images/IMG_0047.png>)
+![IPv4_loc](</images/IMG_0048.png>)
 
 ### Roadmap
 - [x] LAN Device Discovery
