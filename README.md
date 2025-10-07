@@ -1,5 +1,5 @@
                         
-![Logo](<Project Logo Temp.png>)                                
+![Logo](</images/logo.png>)                                
 
 Team Becrux submission for CSULB Project Starbound, currently ran as a script with modules to be installed but will be containarized via Docker to run as a "one click" application on user devices 
 
@@ -12,29 +12,8 @@ Windows Users only
 MacOS/Linus Users only
 - Please replace "wifi" on line 28 to "ens33"
 
-### How to run the program on Windows
-
-Navigate to the correct folder in VSCode
-
-Open the terminal and make sure you are in the folder that contains the requirements.txt file.
-cd /path/to/your/project
-
-Make a venv (if you haven't made one yet) by running:
-python -m venv HNS_venv
-
-Activate the venv by running:
-HNS_venv\Scripts\activate
-
-Install all dependencies to the venv using:
-pip install -r requirements.txt
-
-Make sure you are using the right interpreter by
-- clicking on View>Command Palette
-- type in interpreter and click on "Python: Select Interpreter"
-- click on the option that contains 'HNS_venv' in the name
-
 ### Installation
-run the following in command line/powershell (skip if followed "How to run the program on Windows" steps)
+run the following in command line/powershell
 
 - `pip install scapy`
 - `pip install click_spinner`
@@ -50,11 +29,11 @@ replace x on line 75 with IPv4 address
 
 ### Roadmap
 - [x] LAN Device Discovery
-- [ ] Tying devices to manufacturer and device names 
+- [x] Tying devices to manufacturer and device names 
 - [ ] Scan for New/Unknown Devices/Alerts on a new device/Unanaswered Packets
 - [ ] Frontend UI, user should not have to replace anything within code or find there IPv4 address 
 - [ ] Raspberry Pi OS localization
 
 
 ### Project Schematics
-![alt text](image.png) 
+![alt text](/images/image.png) 
