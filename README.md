@@ -22,7 +22,7 @@ cd /path/to/your/project
 Make a venv (if you haven't made one yet) by running:
 python -m venv HNS_venv
 
-Activate the venv by running:
+Activate the venv by running. Run this command in terminal each time after you open VSCode again:
 HNS_venv\Scripts\activate
 
 Install all dependencies to the venv using:
