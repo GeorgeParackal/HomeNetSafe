@@ -1,0 +1,411 @@
+#!/usr/bin/env python3
+"""
+HomeNetSafe - Enhanced Network Scanner
+=====================================
+
+CLI Flags:
+  --ping-interval SECONDS    Ping scan interval (default: 30)
+  --arp-interval SECONDS     ARP scan interval (default: 300) 
+  --nmap-interval SECONDS    Nmap scan interval (default: 1800)
+  --cidr NETWORK             Network to scan (default: auto-detect)
+  --nmap-threads N           Parallel nmap threads (default: 4)
+
+Behavior:
+  1. Startup: Fast ping sweep → ARP scan → parallel nmap on online devices
+  2. Periodic: Configurable ping/ARP/nmap scheduling with persistent threads
+  3. Discovery: Subnet-wide ping sweeps find devices missed by ARP
+  4. Registry: Tracks ip, mac, vendor, discovered_by, first_seen, last_seen, status
+  5. Cross-platform: Windows/Linux/macOS ping compatibility
+  6. Robust: Graceful nmap handling, clean Ctrl+C shutdown, no timer drift
+"""
+
+import argparse
+import ipaddress
+import platform
+import socket
+import subprocess
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Optional, Set
+
+from mac_vendor_lookup import MacLookup, VendorNotFoundError
+from scapy.all import ARP, Ether, conf, srp
+
+GREEN = "\033[32m"
+RESET = "\033[0m"
+                                                                                                  
+banner = r"""
+                                      
+                ##################                
+            ##########################            
+         ########                ########         
+       #######        .####.        #######       
+      #####     .################.     #####      
+        .     ##########  ##########     .        
+           #######              #######
+ _     ____  _        ____  _____ _     _  ____  _____   ____  _  ____  ____  ____  _     _____ ____ ___  _
+/ \   /  _ \/ \  /|  /  _ \/  __// \ |\/\/   _\/  __/  /  _ \/ \/ ___\/   _\/  _ \/ \ |\/  __//  __\\  \//
+| |   | / \|| |\ ||  | | \||  \  | | //| ||  /  |  \    | | \|| ||    \|  /  | / \|| | //|  \  |  \/| \  / 
+| |_/\| |-||| | \||  | |_/||  /_ | \// | ||  \__|  /_   | |_/|| |\___ ||  \__| \_/|| \// |  /_ |    / / /                        
+\____/\_/ \|\_/  \|  \____/\____\\__/  \_/\____/\____\  \____/\_/\____/\____/\____/\__/  \____\\_/\_\/_/          
+           ####      ########      ####           
+                  ##############                  
+                ######      ######      Written by Chenchu H. Yakasiri Saravanan with George Paracakal
+                 ##            ##       - Oct 2025 
+                       .###                       
+                      ######                      
+                     ########                     
+                      ######                      
+                                                
+"""
+
+# Setup directories
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "hns_data"
+NMAP_DIR = DATA_DIR / "nmap"
+DATA_DIR.mkdir(exist_ok=True)
+NMAP_DIR.mkdir(exist_ok=True)
+
+# Global state
+device_registry: Dict[str, dict] = {}
+running = True
+nmap_available = False
+
+# Initialize MAC lookup
+mac_lookup = MacLookup()
+try:
+    mac_lookup.update_vendors()
+except Exception:
+    pass
+
+def check_nmap_available() -> bool:
+    """Check if nmap is available in PATH"""
+    try:
+        subprocess.run(["nmap", "--version"], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+def get_ping_cmd(ip: str) -> list:
+    """Get cross-platform ping command"""
+    system = platform.system().lower()
+    if system == "windows":
+        return ["ping", "-n", "1", "-w", "1000", ip]
+    else:  # Linux/macOS
+        return ["ping", "-c", "1", "-W", "1", ip]
+
+def ping_device(ip: str) -> bool:
+    """Ping a single device"""
+    try:
+        result = subprocess.run(get_ping_cmd(ip), capture_output=True, timeout=2)
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, Exception):
+        return False
+
+def ping_sweep(cidr: str) -> Set[str]:
+    """Fast ping sweep of entire subnet"""
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping sweeping {cidr}...")
+    
+    network = ipaddress.ip_network(cidr, strict=False)
+    responsive_ips = set()
+    
+    def ping_worker(ip_str: str):
+        if ping_device(ip_str):
+            responsive_ips.add(ip_str)
+    
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        futures = [executor.submit(ping_worker, str(ip)) for ip in network.hosts()]
+        for future in futures:
+            future.result()
+    
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping found {len(responsive_ips)} responsive IPs")
+    return responsive_ips
+
+def arp_scan(interface: str, cidr: str, timeout: int = 2, retries: int = 3) -> Dict[str, str]:
+    """ARP scan to get MAC addresses"""
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP scanning {cidr}...")
+    
+    conf.verb = 0
+    found = {}
+    
+    try:
+        for _ in range(retries):
+            ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=cidr), 
+                        timeout=timeout, iface=interface, inter=0.1, verbose=False)
+            for _, pack in ans:
+                found[pack.psrc] = pack.hwsrc.lower()
+            time.sleep(0.2)
+    except Exception as e:
+        print(f"[WARN] ARP scan failed: {e}")
+    
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP found {len(found)} devices with MAC")
+    return found
+
+def update_registry(ip: str, mac: Optional[str] = None, discovered_by: str = "ping"):
+    """Update device registry with new or existing device"""
+    now = datetime.now().isoformat()
+    
+    if ip in device_registry:
+        # Update existing device
+        old_status = device_registry[ip]['status']
+        device_registry[ip]['last_seen'] = now
+        device_registry[ip]['status'] = 'online'
+        
+        # Merge MAC/vendor if provided
+        if mac and not device_registry[ip].get('mac'):
+            device_registry[ip]['mac'] = mac
+            try:
+                device_registry[ip]['vendor'] = mac_lookup.lookup(mac)
+            except VendorNotFoundError:
+                device_registry[ip]['vendor'] = "Unknown"
+        
+        # Log status change
+        if old_status == 'offline':
+            print(f"[NEW] {ip} came back online")
+    else:
+        # New device discovery
+        vendor = "Unknown"
+        if mac:
+            try:
+                vendor = mac_lookup.lookup(mac)
+            except VendorNotFoundError:
+                pass
+        
+        device_registry[ip] = {
+            'ip': ip,
+            'mac': mac or "",
+            'vendor': vendor,
+            'discovered_by': discovered_by,
+            'first_seen': now,
+            'last_seen': now,
+            'status': 'online'
+        }
+        
+        print(f"[NEW] Device discovered: {ip} ({vendor}) via {discovered_by}")
+
+def nmap_scan_device(ip: str) -> bool:
+    """Run nmap on a single device"""
+    if not nmap_available:
+        return False
+    
+    timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
+    output_file = NMAP_DIR / f"nmap-{ip.replace('.', '-')}-{timestamp}.txt"
+    
+    try:
+        cmd = ["nmap", "-sV", "-Pn", ip]
+        with open(output_file, 'w') as f:
+            f.write(f"Command: {' '.join(cmd)}\n\n")
+            subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, text=True, timeout=300)
+        return True
+    except Exception as e:
+        print(f"[ERROR] Nmap failed for {ip}: {e}")
+        return False
+
+def nmap_parallel(ips: list, max_workers: int = 4):
+    """Run nmap on multiple IPs in parallel"""
+    if not ips or not nmap_available:
+        return
+    
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scanning {len(ips)} devices...")
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(nmap_scan_device, ip) for ip in ips]
+        for future in futures:
+            future.result()
+    
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scans completed")
+
+def ping_scheduler(interval: int, cidr: str):
+    """Persistent ping scheduler thread"""
+    while running:
+        if device_registry:
+            online_count = 0
+            offline_transitions = []
+            
+            for ip in list(device_registry.keys()):
+                if ping_device(ip):
+                    old_status = device_registry[ip]['status']
+                    device_registry[ip]['status'] = 'online'
+                    device_registry[ip]['last_seen'] = datetime.now().isoformat()
+                    online_count += 1
+                    
+                    if old_status == 'offline':
+                        print(f"[ONLINE] {ip} is back online")
+                else:
+                    old_status = device_registry[ip]['status']
+                    device_registry[ip]['status'] = 'offline'
+                    
+                    if old_status == 'online':
+                        offline_transitions.append(ip)
+            
+            for ip in offline_transitions:
+                print(f"[OFFLINE] {ip} went offline")
+            
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping: {online_count}/{len(device_registry)} online")
+        
+        time.sleep(interval)
+
+def arp_scheduler(interval: int, interface: str, cidr: str):
+    """Persistent ARP scheduler thread"""
+    while running:
+        # Full subnet ping sweep to discover new devices
+        responsive_ips = ping_sweep(cidr)
+        
+        # Update registry with ping discoveries
+        for ip in responsive_ips:
+            update_registry(ip, discovered_by="ping")
+        
+        # ARP scan for MAC addresses
+        arp_results = arp_scan(interface, cidr)
+        
+        # Merge ARP data into registry
+        for ip, mac in arp_results.items():
+            update_registry(ip, mac=mac, discovered_by="arp")
+        
+        # Immediate nmap on newly discovered devices
+        new_devices = [ip for ip in responsive_ips if ip not in device_registry or 
+                      device_registry[ip]['first_seen'] == device_registry[ip]['last_seen']]
+        
+        if new_devices:
+            nmap_parallel(new_devices)
+        
+        time.sleep(interval)
+
+def nmap_scheduler(interval: int, max_workers: int):
+    """Persistent nmap scheduler thread"""
+    while running:
+        if device_registry:
+            online_devices = [ip for ip, info in device_registry.items() 
+                            if info['status'] == 'online']
+            nmap_parallel(online_devices, max_workers)
+        
+        time.sleep(interval)
+
+def display_status():
+    """Display current device status"""
+    print("\n" + "="*70)
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Device Registry Status")
+    print("="*70)
+    
+    if not device_registry:
+        print("No devices discovered yet.")
+        return
+    
+    online = sum(1 for d in device_registry.values() if d['status'] == 'online')
+    total = len(device_registry)
+    
+    print(f"Total: {total} | Online: {online} | Offline: {total-online}")
+    print("-"*70)
+    
+    for ip in sorted(device_registry.keys(), key=lambda x: ipaddress.ip_address(x)):
+        info = device_registry[ip]
+        status_icon = "🟢" if info['status'] == 'online' else "🔴"
+        mac_display = info['mac'][:17] if info['mac'] else "Unknown"
+        vendor_display = info['vendor'][:20] if info['vendor'] else "Unknown"
+        discovered_by = info.get('discovered_by', 'unknown')
+        
+        print(f"{status_icon} {ip:15} {mac_display:17} {vendor_display:20} ({discovered_by})")
+    
+    print("="*70)
+
+def auto_detect_cidr() -> str:
+    """Auto-detect local network CIDR"""
+    try:
+        # Get default route IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        
+        # Assume /24 network
+        network = ipaddress.IPv4Network(f"{local_ip}/24", strict=False)
+        return str(network)
+    except Exception:
+        return "192.168.1.0/24"  # Fallback
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description="HomeNetSafe - Enhanced Network Scanner")
+    parser.add_argument("--ping-interval", type=int, default=30, 
+                       help="Ping scan interval in seconds (default: 30)")
+    parser.add_argument("--arp-interval", type=int, default=300,
+                       help="ARP scan interval in seconds (default: 300)")
+    parser.add_argument("--nmap-interval", type=int, default=1800,
+                       help="Nmap scan interval in seconds (default: 1800)")
+    parser.add_argument("--cidr", type=str, default=None,
+                       help="Network CIDR to scan (default: auto-detect)")
+    parser.add_argument("--nmap-threads", type=int, default=4,
+                       help="Parallel nmap threads (default: 4)")
+    parser.add_argument("--interface", type=str, default="Wi-Fi",
+                       help="Network interface for ARP (default: Wi-Fi)")
+    
+    return parser.parse_args()
+
+def main():
+    global running, nmap_available
+    
+    args = parse_args()
+    
+    print(GREEN + banner + RESET)
+    print("[->] HomeNetSafe - Enhanced Network Scanner")
+    
+    # Check nmap availability
+    nmap_available = check_nmap_available()
+    if not nmap_available:
+        print("[WARN] nmap not found - port scanning disabled")
+    
+    # Auto-detect network if not specified
+    cidr = args.cidr or auto_detect_cidr()
+    print(f"[->] Scanning network: {cidr}")
+    
+    print("[->] Starting initial discovery sequence...")
+    
+    # Initial startup sequence: ping → ARP → parallel nmap
+    responsive_ips = ping_sweep(cidr)
+    for ip in responsive_ips:
+        update_registry(ip, discovered_by="ping")
+    
+    arp_results = arp_scan(args.interface, cidr)
+    for ip, mac in arp_results.items():
+        update_registry(ip, mac=mac, discovered_by="arp")
+    
+    # Initial parallel nmap on all discovered devices
+    if responsive_ips and nmap_available:
+        nmap_parallel(list(responsive_ips), args.nmap_threads)
+    
+    display_status()
+    
+    print(f"\n[->] Starting scheduled monitoring:")
+    print(f"    • Ping scan: every {args.ping_interval}s")
+    print(f"    • ARP scan: every {args.arp_interval}s") 
+    print(f"    • Nmap scan: every {args.nmap_interval}s")
+    print(f"    • Nmap threads: {args.nmap_threads}")
+    print("\n[->] Press Ctrl+C to stop\n")
+    
+    # Start persistent scheduler threads
+    ping_thread = threading.Thread(target=ping_scheduler, 
+                                  args=(args.ping_interval, cidr), daemon=True)
+    arp_thread = threading.Thread(target=arp_scheduler, 
+                                 args=(args.arp_interval, args.interface, cidr), daemon=True)
+    nmap_thread = threading.Thread(target=nmap_scheduler, 
+                                  args=(args.nmap_interval, args.nmap_threads), daemon=True)
+    
+    ping_thread.start()
+    arp_thread.start()
+    if nmap_available:
+        nmap_thread.start()
+    
+    try:
+        while running:
+            time.sleep(60)  # Display status every minute
+            display_status()
+    except KeyboardInterrupt:
+        print("\n[->] Stopping schedulers...")
+        running = False
+        print("[->] HomeNetSafe stopped. Goodbye!")
+
+if __name__ == "__main__":
+    main()

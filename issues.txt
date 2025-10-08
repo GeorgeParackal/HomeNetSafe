@@ -1,0 +1,2 @@
+1/. timming for ping, nmap, and arp may need to change
+2/. automated ping may only be looking for known devices. (we want it to ping all posible ips in the network to see and compare known devices with unknown devices and go from there)
