@@ -1,0 +1,12 @@
+10/07/2025 - edited chenchu's code.
+
+10/07/2025 - 
+The enhanced scan_device.py now performs automated network monitoring with scheduled scans and real-time status updates. It begins with a comprehensive ARP scan to discover all devices on your network, runs immediate nmap scans for detailed device information, and builds an active device registry. Each device’s IP, MAC, vendor, and online/offline status are tracked and updated, while all results are saved to your existing hns_data structure.
+
+After initialization, the script continuously monitors your network: it pings all known devices every 30 seconds, performs a new ARP scan every 5 minutes to detect unknown or changed devices, and runs nmap scans every 30 minutes for deeper analysis. It provides live updates with timestamps, color-coded device status indicators, and logs all activity. Built with non-blocking schedulers, error handling, and graceful shutdown (Ctrl+C), it combines reliability and automation to give you a complete, real-time view of your home network’s security.
+
+
+10/08/2025 - 
+ The enhanced scan_device.py now delivers a fully configurable, cross-platform network monitoring tool with faster discovery, stable scheduling, and intelligent device tracking. It introduces CLI flags for scan intervals, network range, interface selection, and Nmap threading, allowing complete runtime customization. The startup sequence now performs a fast ping sweep → ARP scan → parallel Nmap, significantly accelerating initial discovery.
+
+Persistent threaded schedulers replace fragile timers, ensuring predictable intervals, independent operation, and clean shutdowns. Subnet-wide ping sweeps detect devices missed by ARP, triggering immediate parallel Nmap scans, while the improved registry merges ping and ARP data and tracks device metadata, vendor, discovery method, timestamps, and online/offline status. The script supports Windows, Linux, and macOS, handles errors gracefully, and logs new discoveries and state changes in real time—all while preserving the original banner, data directories, and MAC vendor lookup.

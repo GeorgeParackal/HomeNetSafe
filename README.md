@@ -43,15 +43,12 @@ run the following in command line/powershell (skip if followed "How to run the p
 If on windows, instal "Npcap" from browser
 
 ### Usage
-Run `ipconfig` within command line
-replace x on line 75 with IPv4 address 
-![temp_IPv4](</images/IMG_0047.png>)
-![IPv4_loc](</images/IMG_0048.png>)
+Just click run in the terminal bro.....
 
 ### Roadmap
 - [x] LAN Device Discovery
 - [x] Tying devices to manufacturer and device names 
-- [ ] Scan for New/Unknown Devices/Alerts on a new device/Unanaswered Packets
+- [x] Scan for New/Unknown Devices/Alerts on a new device/Unanaswered Packets
 - [ ] Frontend UI, user should not have to replace anything within code or find there IPv4 address 
 - [ ] Raspberry Pi OS localization
 
