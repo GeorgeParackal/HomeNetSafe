@@ -45,6 +45,13 @@ If on windows, instal "Npcap" from browser
 ### Usage
 Just click run in the terminal bro.....
 
+### Github Commands
+- git checkout -b your-branch-name : creating new branch to work on
+- git checkout your-branch-name : switching between branches
+- git branch : see which branch you are on
+- git push -u origin your-branch-name : pushing changes in your branch
+- git fetch origin + git rebase origin/main : get the latest changes from main onto your branch
+
 ### Roadmap
 - [x] LAN Device Discovery
 - [x] Tying devices to manufacturer and device names 
