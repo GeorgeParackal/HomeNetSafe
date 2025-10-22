@@ -1,0 +1,45 @@
+10/22/2025
+FRONTEND UPDATES - HomeNetSafe v1
+
+UI Changes:
+• Removed Home page
+• Devices tab is now default
+• Added Scan Network button in header
+• Simplified navigation to 3 tabs
+
+Device Management:
+• New registration modal with:
+  - Custom device naming
+  - Notes field
+  - Confirmation dialog
+• Unregister functionality
+• Persistent device data in localStorage
+
+Table Improvements:
+• Optimized column widths:
+  - Status (10%)
+  - Name (15%)
+  - IP (12%)
+  - MAC (15%)
+  - Vendor (15%)
+  - Dates (12% each)
+  - Action (9%)
+• Better alignments:
+  - Left: Names, Vendor
+  - Center: Status, IP, MAC, Dates
+• Monospace font for IP/MAC
+• Consistent cell padding
+• Row separators
+
+Visual Updates:
+• Neutral gray for Unregister button
+• Green status for registered devices
+• Muted color for new devices
+• Enhanced notes display
+• Clean table headers
+
+Core Features:
+• Auto-scan on page load
+• One-click device registration
+• Custom device info storage
+• Quick network scanning

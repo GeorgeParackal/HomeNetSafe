@@ -5,7 +5,7 @@ import subprocess, sys, os
 app = Flask(__name__)
 CORS(app)  # Allow browser requests from your HTML page
 
-SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "Device Discovery.py")
+SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "scan_device.py")
 
 @app.get("/run-script")
 def run_script():
