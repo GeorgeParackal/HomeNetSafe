@@ -58,14 +58,14 @@
 
   /* active label */
   #tab-home:checked ~ .tabs .tab-label[for="tab-home"],
-  #tab-scan:checked ~ .tabs .tab-label[for="tab-scan"],
   #tab-devices:checked ~ .tabs .tab-label[for="tab-devices"],
+  #tab-killswitch:checked ~ .tabs .tab-label[for="tab-killswitch"],
   #tab-settings:checked ~ .tabs .tab-label[for="tab-settings"]{
     color:#eaffff;background:linear-gradient(180deg,rgba(0,229,255,.2),rgba(0,229,255,.06));
     border-color:rgba(0,229,255,.45);box-shadow:0 0 18px rgba(0,229,255,.25), inset 0 0 0 1px rgba(0,229,255,.25)}
   #tab-home:checked ~ .panes #pane-home,
-  #tab-scan:checked ~ .panes #pane-scan,
   #tab-devices:checked ~ .panes #pane-devices,
+  #tab-killswitch:checked ~ .panes #pane-killswitch,
   #tab-settings:checked ~ .panes #pane-settings{display:block}
 
   /* ====== Cards / Controls (minimal) ====== */
@@ -150,71 +150,85 @@
   </div>
 
   <div class="container">
-    <!-- Tabs (only 4) -->
-    <input type="radio" name="tabs" id="tab-home" checked>
-    <input type="radio" name="tabs" id="tab-scan">
-    <input type="radio" name="tabs" id="tab-devices">
-    <input type="radio" name="tabs" id="tab-settings">
+    <!-- Tabs (only 3) -->
+  <input type="radio" name="tabs" id="tab-devices" checked>
+  <input type="radio" name="tabs" id="tab-killswitch">
+  <input type="radio" name="tabs" id="tab-settings">
 
     <div class="tabs">
       <div class="tab-labels">
-        <label class="tab-label" for="tab-home">Home</label>
-        <label class="tab-label" for="tab-scan">Scan</label>
         <label class="tab-label" for="tab-devices">Devices</label>
+        <label class="tab-label" for="tab-killswitch">Killswitch</label>
         <label class="tab-label" for="tab-settings">Settings</label>
       </div>
     </div>
 
     <div class="panes">
       <!-- ===== HOME: big centered 3D logo (clickable) ===== -->
-      <section id="pane-home" class="pane">
-        <div class="hero center">
-          <button class="logo3d" id="enterScan" aria-label="Go to Scan">
-            <div class="logo-text">HomeNetSafe</div>
-          </button>
-          <h2>Clean. Minimal. Just what you need.</h2>
+            <!-- Device registration modal -->
+      <div id="registerModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:101;background:rgba(0,0,0,0.55);">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:16px;padding:32px 24px;min-width:320px;max-width:90vw;box-shadow:0 0 32px #0008;">
+          <h2 style="margin-top:0;color:var(--accent);font-size:22px;text-align:center;">Register Device</h2>
+          <form id="registerForm" style="margin-top:20px;">
+            <input type="hidden" id="regDeviceMac">
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;color:var(--muted);">Custom Name</label>
+              <input type="text" id="regDeviceName" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);" required>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;color:var(--muted);">Notes</label>
+              <textarea id="regDeviceNotes" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-height:80px;"></textarea>
+            </div>
+            <div style="text-align:center;margin-top:24px;">
+              <button type="submit" style="padding:8px 24px;border-radius:8px;background:var(--accent);color:#032c33;font-weight:700;border:none;cursor:pointer;margin-right:12px;">Register</button>
+              <button type="button" onclick="document.getElementById('registerModal').style.display='none'" style="padding:8px 24px;border-radius:8px;background:#666;color:var(--ink);font-weight:700;border:none;cursor:pointer;">Cancel</button>
+            </div>
+          </form>
         </div>
+      </div>
 
-        <div class="grid grid-2">
-          <div class="card">
-            <strong>What’s here?</strong>
-            <ul class="muted" style="margin-top:8px;line-height:1.6">
-              <li>Click the big logo to start</li>
-              <li>Four simple sections — Home, Scan, Devices, Settings</li>
-              <li>Only essential data: Name, IP, MAC</li>
-            </ul>
-          </div>
-          <div class="card center">
-            <div class="muted">Welcome! The logo is your new “Scan” button.</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== SCAN (output-only) ===== -->
-      <section id="pane-scan" class="pane">
-        <div class="card">
-          <strong>Device Discovery Output</strong>
-          <div style="height:10px"></div>
-          <pre id="scanOutput" class="terminal">Waiting for scan...</pre>
-        </div>
-      </section>
-
-      <!-- ===== DEVICES (short table) ===== -->
+      <!-- ===== DEVICES (output of discovered devices) ===== -->
       <section id="pane-devices" class="pane">
         <div class="card">
-          <strong>Registered Devices</strong>
-          <div style="overflow:auto;margin-top:10px">
-            <table>
-              <thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead>
+          <strong>Discovered Devices</strong>
+              <div id="scanFailMsg" style="display:none;color:#ff3b3b;font-weight:700;text-align:center;margin:24px 0 18px;font-size:18px;">Scan failed. No devices found.</div>
+              <div id="devicesTableWrap" style="overflow:auto;margin-top:10px;">
+                <table id="devicesTable" style="width:100%;border-collapse:collapse">
+              <colgroup>
+                <col style="width:10%"> <!-- Status -->
+                <col style="width:15%"> <!-- Name -->
+                <col style="width:12%"> <!-- IP -->
+                <col style="width:15%"> <!-- MAC -->
+                <col style="width:15%"> <!-- Vendor -->
+                <col style="width:12%"> <!-- First seen -->
+                <col style="width:12%"> <!-- Last seen -->
+                <col style="width:9%">  <!-- Action -->
+              </colgroup>
+              <thead>
+                    <tr style="background:rgba(0,229,255,.08);">
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">Status</th>
+                      <th style="text-align:left;padding:12px 8px;font-weight:600;">Name</th>
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">IP</th>
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">MAC</th>
+                      <th style="text-align:left;padding:12px 8px;font-weight:600;">Vendor</th>
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">First seen</th>
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">Last seen</th>
+                      <th style="text-align:center;padding:12px 8px;font-weight:600;">Action</th>
+                    </tr>
+              </thead>
               <tbody id="devicesBody">
-                <tr><td>Router</td><td>192.168.1.1</td><td>6C:DD:6C:B1:FF:02</td></tr>
-                <tr><td>Laptop</td><td>192.168.1.11</td><td>4E:4C:29:F6:13:C2</td></tr>
-                <tr><td>Phone</td><td>192.168.1.8</td><td>12:7B:61:25:9B:AD</td></tr>
-                <tr><td>Smart TV</td><td>192.168.1.31</td><td>38:1B:00:E5:99:7E</td></tr>
-                <tr><td>Printer</td><td>192.168.1.5</td><td>D6:A2:FF:F1:5D:CC</td></tr>
+                    <!-- Device rows will be injected here -->
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- ===== KILLSWITCH (placeholder) ===== -->
+      <section id="pane-killswitch" class="pane">
+        <div class="card center">
+          <strong>Killswitch</strong>
+          <div class="muted" style="margin-top:10px">This will reset the network in case of failure.<br>Feature coming soon.</div>
         </div>
       </section>
 
@@ -237,9 +251,45 @@
   </div>
 
   <!-- ===== Fullscreen overlay for code rain transition ===== -->
+  <!-- ===== Instruction Modal ===== -->
+  <div id="instructionModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:101;background:rgba(0,0,0,0.55);">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:16px;padding:32px 24px;min-width:320px;max-width:90vw;box-shadow:0 0 32px #0008;">
+      <h2 style="margin-top:0;color:var(--accent);font-size:22px;text-align:center;">Instructions</h2>
+      <div style="color:var(--ink);font-size:16px;line-height:1.7;margin:18px 0 0;">
+        <ul>
+          <li>Click the big logo to scan your network for devices.</li>
+          <li>View discovered devices in the Devices tab.</li>
+          <li>If the scan fails, you will see an error message.</li>
+          <li>Use the Killswitch tab to reset your network (coming soon).</li>
+          <li>Contact us via email for support or questions.</li>
+        </ul>
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <button onclick="document.getElementById('instructionModal').style.display='none'" style="padding:8px 24px;border-radius:8px;background:var(--accent);color:#032c33;font-weight:700;border:none;cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===== Footer ===== -->
+  <footer style="width:100%;background:var(--panel);border-top:1px solid var(--line);padding:18px 0 12px;position:fixed;bottom:0;left:0;z-index:99;text-align:center;">
+    <div style="margin-bottom:8px;color:var(--muted);font-size:15px;">
+      Questions? Contact us at <a href="mailto:support@homenetsafe.com" style="color:var(--accent);text-decoration:none;font-weight:600;">support@homenetsafe.com</a>
+    </div>
+    <button onclick="document.getElementById('instructionModal').style.display='block'" style="padding:10px 28px;border-radius:10px;background:var(--accent);color:#032c33;font-weight:700;border:none;cursor:pointer;font-size:16px;box-shadow:0 2px 8px #00e5ff22;">Instructions</button>
+  </footer>
   <div id="matrixOverlay" aria-hidden="true">
     <canvas id="matrixCanvas"></canvas>
     <div id="matrixText"></div>
+  </div>
+
+  <!-- ===== Scan Result Modal ===== -->
+  <div id="scanResultModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:100;background:rgba(0,0,0,0.55);">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:16px;padding:32px 24px;min-width:320px;max-width:90vw;box-shadow:0 0 32px #0008;">
+      <h2 style="margin-top:0;color:var(--accent);font-size:22px;text-align:center;">Scan Result</h2>
+      <pre id="scanResultText" style="background:#061017;color:#eaffff;padding:16px;border-radius:10px;max-height:40vh;overflow:auto;font-size:15px;white-space:pre-wrap;word-break:break-word;margin:18px 0 0;text-align:left;"></pre>
+      <div style="text-align:center;margin-top:18px;">
+        <button onclick="document.getElementById('scanResultModal').style.display='none'" style="padding:8px 24px;border-radius:8px;background:var(--accent);color:#032c33;font-weight:700;border:none;cursor:pointer;">Close</button>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -247,7 +297,7 @@
   const API_URL = 'http://127.0.0.1:5000/run-script'; // Flask endpoint
 
   // ===== Tabs helper
-  function switchToScan(){ document.getElementById('tab-scan').checked = true; }
+  function switchToDevices(){ document.getElementById('tab-devices').checked = true; }
 
   // ===== Elements
   const enterScanBtn = document.getElementById('enterScan');
@@ -324,10 +374,154 @@
     startLoadingPulse();
   }
 
+  // ===== localStorage helpers for registered devices
+  const REG_KEY = 'homenetsafe_registered_devices_v1';
+  function loadRegisteredDevices(){
+    try{ const raw = localStorage.getItem(REG_KEY); return raw ? JSON.parse(raw) : {}; }catch{return {};}
+  }
+  function saveRegisteredDevices(obj){ localStorage.setItem(REG_KEY, JSON.stringify(obj)); }
+  function isRegistered(mac){ const map = loadRegisteredDevices(); return !!map[mac]; }
+  function registerDevice(dev, customName, notes){ 
+    const map = loadRegisteredDevices(); 
+    map[dev.mac] = { 
+      ...dev, 
+      customName: customName,
+      notes: notes,
+      registeredAt: new Date().toISOString() 
+    }; 
+    saveRegisteredDevices(map); 
+  }
+  function unregisterDevice(mac){
+    const map = loadRegisteredDevices();
+    delete map[mac];
+    saveRegisteredDevices(map);
+  }
+
+  function renderDevices(devices){
+    const tbody = document.getElementById('devicesBody');
+    const failMsg = document.getElementById('scanFailMsg');
+    const tableWrap = document.getElementById('devicesTableWrap');
+    if (!devices || !Array.isArray(devices) || devices.length === 0){
+      failMsg.style.display = 'block'; tableWrap.style.display = 'none'; tbody.innerHTML = ''; return;
+    }
+    failMsg.style.display = 'none'; tableWrap.style.display = 'block';
+    const regMap = loadRegisteredDevices();
+    tbody.innerHTML = devices.map(dev => {
+      const reg = !!regMap[dev.mac];
+      const statusLabel = reg ? 'Registered' : 'New';
+      const statusColor = reg ? '#08f76f' : '#9fc9db';
+      const registeredInfo = reg ? regMap[dev.mac] : null;
+      return `
+        <tr>
+          <td style="text-align:center;color:${statusColor};font-weight:700;padding:12px 8px;border-bottom:1px solid var(--line);">${statusLabel}</td>
+          <td style="text-align:left;padding:12px 8px;border-bottom:1px solid var(--line);">${registeredInfo?.customName || dev.name || ''}</td>
+          <td style="text-align:center;padding:12px 8px;font-family:monospace;border-bottom:1px solid var(--line);">${dev.ip || ''}</td>
+          <td style="text-align:center;padding:12px 8px;font-family:monospace;border-bottom:1px solid var(--line);">${dev.mac || ''}</td>
+          <td style="text-align:left;padding:12px 8px;border-bottom:1px solid var(--line);">${dev.vendor || ''}</td>
+          <td style="text-align:center;padding:12px 8px;border-bottom:1px solid var(--line);">${dev.first_seen || ''}</td>
+          <td style="text-align:center;padding:12px 8px;border-bottom:1px solid var(--line);">${dev.last_seen || ''}</td>
+          <td style="text-align:center;padding:12px 8px;border-bottom:1px solid var(--line);">
+            ${reg ? 
+              `<button class="unregBtn" data-mac="${dev.mac}" style="padding:6px 10px;border-radius:8px;border:none;cursor:pointer;background:#666;color:var(--ink);font-weight:700;white-space:nowrap;">Unregister</button>` :
+              `<button class="regBtn" data-mac="${dev.mac}" style="padding:6px 10px;border-radius:8px;border:none;cursor:pointer;background:var(--accent);color:#032c33;font-weight:700;white-space:nowrap;">Register</button>`
+            }
+          </td>
+        </tr>
+        ${registeredInfo?.notes ? `
+        <tr>
+          <td colspan="8" style="text-align:left;padding:12px 16px;background:rgba(0,229,255,.05);border-bottom:1px solid var(--line);">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <strong style="color:var(--accent);">Notes:</strong>
+              <span style="color:var(--muted);">${registeredInfo.notes}</span>
+            </div>
+          </td>
+        </tr>
+        ` : ''}
+      `;
+    }).join('');
+
+    // attach handlers for registration buttons
+    Array.from(document.getElementsByClassName('regBtn')).forEach(btn => {
+      btn.onclick = () => {
+        const mac = btn.getAttribute('data-mac');
+        const idx = devices.findIndex(d => d.mac === mac);
+        if (idx > -1) {
+          document.getElementById('regDeviceMac').value = devices[idx].mac;
+          document.getElementById('regDeviceName').value = devices[idx].name || '';
+          document.getElementById('regDeviceNotes').value = '';
+          document.getElementById('registerModal').style.display = 'block';
+        }
+      };
+    });
+
+    // attach handlers for unregister buttons
+    Array.from(document.getElementsByClassName('unregBtn')).forEach(btn => {
+      btn.onclick = () => {
+        const mac = btn.getAttribute('data-mac');
+        if (confirm('Are you sure you want to unregister this device?')) {
+          unregisterDevice(mac);
+          renderDevices(devices);
+        }
+      };
+    });
+
+    // handle registration form submission
+    document.getElementById('registerForm').onsubmit = (e) => {
+      e.preventDefault();
+      const mac = document.getElementById('regDeviceMac').value;
+      const customName = document.getElementById('regDeviceName').value;
+      const notes = document.getElementById('regDeviceNotes').value;
+      const idx = devices.findIndex(d => d.mac === mac);
+      if (idx > -1) {
+        registerDevice(devices[idx], customName, notes);
+        document.getElementById('registerModal').style.display = 'none';
+        renderDevices(devices);
+      }
+    };
+  }
+
+  // Auto-scan on load
+  window.addEventListener('load', async ()=>{
+    // run scan automatically
+    const result = await runDeviceDiscovery();
+    let devices = [];
+    if (result && typeof result === 'string'){
+      try { devices = JSON.parse(result); } catch { devices = []; }
+    }
+    // if no devices, fall back to example data
+    if (!devices || !devices.length){
+      // example fallback (kept minimal)
+      devices = [
+        { name:'Router', ip:'192.168.1.1', mac:'6C:DD:6C:B1:FF:02', vendor:'NetGear', first_seen:'2025-10-01', last_seen:'2025-10-22', status:'Healthy' },
+        { name:'Laptop', ip:'192.168.1.11', mac:'4E:4C:29:F6:13:C2', vendor:'Dell', first_seen:'2025-09-30', last_seen:'2025-10-22', status:'Healthy' }
+      ];
+    }
+    renderDevices(devices);
+  });
+
+  // Add scan button to the header
+  const brandDiv = document.querySelector('.brand');
+  const scanButton = document.createElement('button');
+  scanButton.style.cssText = 'margin-left:16px;padding:8px 16px;border-radius:8px;background:var(--accent);color:#032c33;font-weight:700;border:none;cursor:pointer;';
+  scanButton.textContent = 'Scan Network';
+  scanButton.onclick = async () => {
+    scanButton.disabled = true;
+    scanButton.textContent = 'Scanning...';
+    const result = await runDeviceDiscovery();
+    let devices = [];
+    if (result && typeof result === 'string') {
+      try { devices = JSON.parse(result); } catch { devices = []; }
+    }
+    renderDevices(devices);
+    scanButton.disabled = false;
+    scanButton.textContent = 'Scan Network';
+  };
+  brandDiv.appendChild(scanButton);
+
   async function runDeviceDiscovery(){
     // Hit your Flask endpoint that runs "Device Discovery.py"
     try {
-      scanOutput.textContent = "Running scan...";
+      if (scanOutput) scanOutput.textContent = "Running scan...";
       const r = await fetch(API_URL, { method:'GET', mode:'cors', cache:'no-store' });
       if(!r.ok){
         const txt = await r.text().catch(()=> '');
@@ -337,10 +531,16 @@
       let out = '';
       if (data && typeof data.stdout === 'string') out += data.stdout.trim();
       if (data && data.stderr && data.stderr.trim()) out += (out?'\n\n':'') + '[stderr]\n' + data.stderr.trim();
-      pendingOutput = out || "(no output)";
+      // If backend returned structured JSON devices, prefer that
+      if (data && data.devices) {
+        pendingOutput = JSON.stringify(data.devices);
+      } else {
+        pendingOutput = out || "(no output)";
+      }
     } catch (e) {
       pendingOutput = "Failed to contact server.\n" + e;
     }
+    return pendingOutput;
   }
 
   function endMatrixTransitionAndShowOutput(){
@@ -354,10 +554,56 @@
 
   // Click the logo: start transition, run Python, then reveal output
   enterScanBtn?.addEventListener('click', async () => {
-    startTransition();             // start overlay + animation + pulses
-    await runDeviceDiscovery();    // wait for backend to finish
-    showWord('SAFE', 900);         // final flash
-    setTimeout(endMatrixTransitionAndShowOutput, 800);
+    startTransition();
+    let scanFailed = false;
+    let resultText = '';
+    let devices = [];
+    try {
+      await runDeviceDiscovery();
+      if (pendingOutput.startsWith('Failed to contact server')) {
+        scanFailed = true;
+        resultText = 'Scan failed. No devices found.';
+      } else {
+        // Try to parse output as JSON array of devices, fallback to plain text
+        try {
+          devices = JSON.parse(pendingOutput);
+        } catch {
+          resultText = pendingOutput;
+        }
+      }
+    } catch (e) {
+      scanFailed = true;
+      resultText = 'Scan failed. No devices found.';
+    }
+    showWord('SAFE', 900);
+    setTimeout(() => {
+      running = false;
+      cancelAnimationFrame(rafId);
+      stopLoadingPulse();
+      overlay.style.display = 'none';
+      switchToDevices();
+      // Show/hide device table or error
+      const failMsg = document.getElementById('scanFailMsg');
+      const tableWrap = document.getElementById('devicesTableWrap');
+      const tbody = document.getElementById('devicesBody');
+      if (scanFailed || !devices || !Array.isArray(devices) || devices.length === 0) {
+        failMsg.style.display = 'block';
+        tableWrap.style.display = 'none';
+        tbody.innerHTML = '';
+      } else {
+        failMsg.style.display = 'none';
+        tableWrap.style.display = 'block';
+        tbody.innerHTML = devices.map(dev => `
+          <tr style="text-align:center;">
+            <td style="text-align:center;">${dev.name || ''}</td>
+            <td style="text-align:center;">${dev.ip || ''}</td>
+            <td style="text-align:center;">${dev.mac || ''}</td>
+            <td style="text-align:center;">${dev.type || ''}</td>
+            <td style="text-align:center;"><span style="color:${dev.status === 'Healthy' ? '#08f76f' : '#9fc9db'}">${dev.status || ''}</span></td>
+          </tr>
+        `).join('');
+      }
+    }, 800);
   });
 
   window.addEventListener('resize', ()=>{ if(overlay.style.display==='block') sizeCanvas(); });
@@ -365,5 +611,6 @@
   // tiny toggle button
   function toggle(el){ el.textContent = el.textContent === 'On' ? 'Off' : 'On'; }
 </script>
+  <!-- ...existing code... -->
 </body>
 </html>
