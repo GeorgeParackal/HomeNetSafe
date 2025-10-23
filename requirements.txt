@@ -1,3 +1,14 @@
-click_spinner==0.1.10
-mac_vendor_lookup==0.1.12
+# Web framework
+Flask
+Flask-Cors
+gunicorn
+
+# Database / ORM
+SQLAlchemy
+
+# Networking & device lookup
 scapy==2.6.1
+mac_vendor_lookup==0.1.12
+
+# Utilities / CLI
+click_spinner==0.1.10
