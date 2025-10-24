@@ -1,23 +1,4 @@
 #!/usr/bin/env python3
-"""
-HomeNetSafe - Enhanced Network Scanner
-=====================================
-
-CLI Flags:
-  --ping-interval SECONDS    Ping scan interval (default: 30)
-  --arp-interval SECONDS     ARP scan interval (default: 300) 
-  --nmap-interval SECONDS    Nmap scan interval (default: 1800)
-  --cidr NETWORK             Network to scan (default: auto-detect)
-  --nmap-threads N           Parallel nmap threads (default: 4)
-
-Behavior:
-  1. Startup: Fast ping sweep → ARP scan → parallel nmap on online devices
-  2. Periodic: Configurable ping/ARP/nmap scheduling with persistent threads
-  3. Discovery: Subnet-wide ping sweeps find devices missed by ARP
-  4. Registry: Tracks ip, mac, vendor, discovered_by, first_seen, last_seen, status
-  5. Cross-platform: Windows/Linux/macOS ping compatibility
-  6. Robust: Graceful nmap handling, clean Ctrl+C shutdown, no timer drift
-"""
 
 import argparse
 import ipaddress
@@ -34,6 +15,7 @@ from typing import Dict, Optional, Set
 from mac_vendor_lookup import MacLookup, VendorNotFoundError
 from scapy.all import ARP, Ether, conf, srp
 
+#Def colors
 GREEN = "\033[32m"
 RESET = "\033[0m"
                                                                                                   
