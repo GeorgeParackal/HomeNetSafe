@@ -33,18 +33,6 @@ Make sure you are using the right interpreter by
 - type in interpreter and click on "Python: Select Interpreter"
 - click on the option that contains 'HNS_venv' in the name
 
-### Installation
-run the following in command line/powershell (skip if followed "How to run the program on Windows" steps)
-
-- `pip install scapy`
-- `pip install click_spinner`
-- `pip install mac_vendor_lookup`
-
-If on windows, instal "Npcap" from browser
-
-### Usage
-Just click run in the terminal bro.....
-
 ### Github Commands
 - git checkout -b your-branch-name : creating new branch to work on
 - git checkout your-branch-name : switching between branches

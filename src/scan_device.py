@@ -11,38 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional, Set
-
 from mac_vendor_lookup import MacLookup, VendorNotFoundError
 from scapy.all import ARP, Ether, conf, srp
-
-#Def colors
-GREEN = "\033[32m"
-RESET = "\033[0m"
-                                                                                                  
-banner = r"""
-                                      
-                ##################                
-            ##########################            
-         ########                ########         
-       #######        .####.        #######       
-      #####     .################.     #####      
-        .     ##########  ##########     .        
-           #######              #######
- _     ____  _        ____  _____ _     _  ____  _____   ____  _  ____  ____  ____  _     _____ ____ ___  _
-/ \   /  _ \/ \  /|  /  _ \/  __// \ |\/\/   _\/  __/  /  _ \/ \/ ___\/   _\/  _ \/ \ |\/  __//  __\\  \//
-| |   | / \|| |\ ||  | | \||  \  | | //| ||  /  |  \    | | \|| ||    \|  /  | / \|| | //|  \  |  \/| \  / 
-| |_/\| |-||| | \||  | |_/||  /_ | \// | ||  \__|  /_   | |_/|| |\___ ||  \__| \_/|| \// |  /_ |    / / /                        
-\____/\_/ \|\_/  \|  \____/\____\\__/  \_/\____/\____\  \____/\_/\____/\____/\____/\__/  \____\\_/\_\/_/          
-           ####      ########      ####           
-                  ##############                  
-                ######      ######      Written by Chenchu H. Yakasiri Saravanan with George Paracakal
-                 ##            ##       - Oct 2025 
-                       .###                       
-                      ######                      
-                     ########                     
-                      ######                      
-                                                
-"""
 
 # Setup directories
 BASE_DIR = Path(__file__).resolve().parent
@@ -89,7 +59,7 @@ def ping_device(ip: str) -> bool:
 
 def ping_sweep(cidr: str) -> Set[str]:
     """Fast ping sweep of entire subnet"""
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping sweeping {cidr}...")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping sweeping {cidr}...")
     
     network = ipaddress.ip_network(cidr, strict=False)
     responsive_ips = set()
@@ -103,12 +73,12 @@ def ping_sweep(cidr: str) -> Set[str]:
         for future in futures:
             future.result()
     
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping found {len(responsive_ips)} responsive IPs")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping found {len(responsive_ips)} responsive IPs")
     return responsive_ips
 
 def arp_scan(interface: str, cidr: str, timeout: int = 2, retries: int = 3) -> Dict[str, str]:
     """ARP scan to get MAC addresses"""
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP scanning {cidr}...")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP scanning {cidr}...")
     
     conf.verb = 0
     found = {}
@@ -123,7 +93,7 @@ def arp_scan(interface: str, cidr: str, timeout: int = 2, retries: int = 3) -> D
     except Exception as e:
         print(f"[WARN] ARP scan failed: {e}")
     
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP found {len(found)} devices with MAC")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] ARP found {len(found)} devices with MAC")
     return found
 
 def update_registry(ip: str, mac: Optional[str] = None, discovered_by: str = "ping"):
@@ -166,7 +136,7 @@ def update_registry(ip: str, mac: Optional[str] = None, discovered_by: str = "pi
             'status': 'online'
         }
         
-        print(f"[NEW] Device discovered: {ip} ({vendor}) via {discovered_by}")
+        #print(f"[NEW] Device discovered: {ip} ({vendor}) via {discovered_by}")
 
 def nmap_scan_device(ip: str) -> bool:
     """Run nmap on a single device"""
@@ -191,80 +161,39 @@ def nmap_parallel(ips: list, max_workers: int = 4):
     if not ips or not nmap_available:
         return
     
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scanning {len(ips)} devices...")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scanning {len(ips)} devices...")
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(nmap_scan_device, ip) for ip in ips]
         for future in futures:
             future.result()
     
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scans completed")
+    #print(f"[{datetime.now().strftime('%H:%M:%S')}] Nmap scans completed")
 
-def ping_scheduler(interval: int, cidr: str):
-    """Persistent ping scheduler thread"""
-    while running:
-        if device_registry:
-            online_count = 0
-            offline_transitions = []
-            
-            for ip in list(device_registry.keys()):
-                if ping_device(ip):
-                    old_status = device_registry[ip]['status']
-                    device_registry[ip]['status'] = 'online'
-                    device_registry[ip]['last_seen'] = datetime.now().isoformat()
-                    online_count += 1
-                    
-                    if old_status == 'offline':
-                        print(f"[ONLINE] {ip} is back online")
-                else:
-                    old_status = device_registry[ip]['status']
-                    device_registry[ip]['status'] = 'offline'
-                    
-                    if old_status == 'online':
-                        offline_transitions.append(ip)
-            
-            for ip in offline_transitions:
-                print(f"[OFFLINE] {ip} went offline")
-            
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Ping: {online_count}/{len(device_registry)} online")
-        
-        time.sleep(interval)
 
-def arp_scheduler(interval: int, interface: str, cidr: str):
-    """Persistent ARP scheduler thread"""
+def scheduler(interface, cidr, ping_interval, arp_interval, nmap_interval, max_workers):
+    timers = {"ping": 0, "arp": 0, "nmap": 0}
     while running:
-        # Full subnet ping sweep to discover new devices
-        responsive_ips = ping_sweep(cidr)
-        
-        # Update registry with ping discoveries
-        for ip in responsive_ips:
-            update_registry(ip, discovered_by="ping")
-        
-        # ARP scan for MAC addresses
-        arp_results = arp_scan(interface, cidr)
-        
-        # Merge ARP data into registry
-        for ip, mac in arp_results.items():
-            update_registry(ip, mac=mac, discovered_by="arp")
-        
-        # Immediate nmap on newly discovered devices
-        new_devices = [ip for ip in responsive_ips if ip not in device_registry or 
-                      device_registry[ip]['first_seen'] == device_registry[ip]['last_seen']]
-        
-        if new_devices:
-            nmap_parallel(new_devices)
-        
-        time.sleep(interval)
+        now = time.time()
+        if now - timers["ping"] > ping_interval:
+            responsive = ping_sweep(cidr)
+            for ip in responsive:
+                update_registry(ip, discovered_by="ping")
+            timers["ping"] = now
 
-def nmap_scheduler(interval: int, max_workers: int):
-    """Persistent nmap scheduler thread"""
-    while running:
-        if device_registry:
-            online_devices = [ip for ip, info in device_registry.items() 
-                            if info['status'] == 'online']
-            nmap_parallel(online_devices, max_workers)
+        if now - timers["arp"] > arp_interval:
+            arp_results = arp_scan(interface, cidr)
+            for ip, mac in arp_results.items():
+                update_registry(ip, mac=mac, discovered_by="arp")
+            timers["arp"] = now
+
+        if nmap_available and now - timers["nmap"] > nmap_interval:
+            online = [ip for ip, info in device_registry.items() if info['status'] == 'online']
+            nmap_parallel(online, max_workers)
+            timers["nmap"] = now
         
-        time.sleep(interval)
+        time.sleep(1)
+
 
 def display_status():
     """Display current device status"""
@@ -311,18 +240,12 @@ def auto_detect_cidr() -> str:
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description="HomeNetSafe - Enhanced Network Scanner")
-    parser.add_argument("--ping-interval", type=int, default=30, 
-                       help="Ping scan interval in seconds (default: 30)")
-    parser.add_argument("--arp-interval", type=int, default=300,
-                       help="ARP scan interval in seconds (default: 300)")
-    parser.add_argument("--nmap-interval", type=int, default=1800,
-                       help="Nmap scan interval in seconds (default: 1800)")
-    parser.add_argument("--cidr", type=str, default=None,
-                       help="Network CIDR to scan (default: auto-detect)")
-    parser.add_argument("--nmap-threads", type=int, default=4,
-                       help="Parallel nmap threads (default: 4)")
-    parser.add_argument("--interface", type=str, default="Wi-Fi",
-                       help="Network interface for ARP (default: Wi-Fi)")
+    parser.add_argument("--ping-interval", type=int, default=30, help="Ping scan interval in seconds (default: 30)")
+    parser.add_argument("--arp-interval", type=int, default=300,help="ARP scan interval in seconds (default: 300)")
+    parser.add_argument("--nmap-interval", type=int, default=1800,help="Nmap scan interval in seconds (default: 1800)")
+    parser.add_argument("--cidr", type=str, default=None,help="Network CIDR to scan (default: auto-detect)")
+    parser.add_argument("--nmap-threads", type=int, default=4,help="Parallel nmap threads (default: 4)")
+    parser.add_argument("--interface", type=str, default="Wi-Fi",help="Network interface for ARP (default: Wi-Fi)")
     
     return parser.parse_args()
 
@@ -331,7 +254,6 @@ def main():
     
     args = parse_args()
     
-    print(GREEN + banner + RESET)
     print("[->] HomeNetSafe - Enhanced Network Scanner")
     
     # Check nmap availability
@@ -360,26 +282,13 @@ def main():
     
     display_status()
     
-    print(f"\n[->] Starting scheduled monitoring:")
-    print(f"    • Ping scan: every {args.ping_interval}s")
-    print(f"    • ARP scan: every {args.arp_interval}s") 
-    print(f"    • Nmap scan: every {args.nmap_interval}s")
-    print(f"    • Nmap threads: {args.nmap_threads}")
+
     print("\n[->] Press Ctrl+C to stop\n")
     
     # Start persistent scheduler threads
-    ping_thread = threading.Thread(target=ping_scheduler, 
-                                  args=(args.ping_interval, cidr), daemon=True)
-    arp_thread = threading.Thread(target=arp_scheduler, 
-                                 args=(args.arp_interval, args.interface, cidr), daemon=True)
-    nmap_thread = threading.Thread(target=nmap_scheduler, 
-                                  args=(args.nmap_interval, args.nmap_threads), daemon=True)
-    
-    ping_thread.start()
-    arp_thread.start()
-    if nmap_available:
-        nmap_thread.start()
-    
+    scheduler_thread = threading.Thread(target=scheduler, args=(args.interface, cidr, args.ping_interval, args.arp_interval, args.nmap_interval, args.nmap_threads), daemon=True) 
+    scheduler_thread.start()
+
     try:
         while running:
             time.sleep(60)  # Display status every minute
