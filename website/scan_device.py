@@ -414,6 +414,51 @@ def parse_args():
     parser.add_argument("--nmap-timeout", type=int, default=300, help="Per-host nmap timeout seconds (default: 300)")
     return parser.parse_args()
 
+class Network_Device:
+    def __init__(self, ip = None, mac = None, vendor = None, last_seen = None, first_seen = None):
+        self.ip = ip
+        self.mac = mac
+        self.vendor = vendor
+        self.last_seen = last_seen
+        self.first_seen = first_seen
+
+    def __str__(self):
+        ret = f'IP: {self.ip}\n'
+        ret += f'MAC:" {self.mac}\n'
+        ret += f'Vendor: {self.vendor}\n'
+        ret += f'Last Seen: {self.last_seen}\n'
+        ret += f'First Seen: {self.first_seen}\n\n'
+        return ret
+
+
+def build_network_device_list():
+    global running, nmap_available
+    args = parse_args()
+
+    # TODO
+    # During scan create new option
+    load_registry()
+
+    local_ip = _get_local_ip()
+    cidr =  auto_detect_cidr()
+    iface =  auto_detect_interface()
+
+    if iface:
+        arp_results = arp_scan(iface, cidr)
+        for ip, mac in arp_results.items():
+            update_registry(ip, mac=mac, discovered_by="arp")
+
+    responsive_ips = ping_sweep(cidr)
+
+    # Initial parallel nmap on all discovered devices (valid IPs)
+    valid_ips = [ip for ip in responsive_ips if _is_ipv4(ip)]
+    if valid_ips and nmap_available:
+        nmap_parallel(valid_ips, args.nmap_threads, timeout=args.nmap_timeout)
+
+    print(device_registry)
+
+    return device_registry
+
 
 # -------------------- Main --------------------
 def main():

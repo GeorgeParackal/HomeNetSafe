@@ -1,3 +1,5 @@
-click_spinner==0.1.10
-mac_vendor_lookup==0.1.12
-scapy==2.6.1
+flask
+flask_login
+flask_sqlalchemy
+sqlalchemy
+werkzeug

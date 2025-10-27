@@ -1,0 +1,25 @@
+.alert-error {
+    padding: 12px;
+    border-radius: 3px;
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    border: 2px solid darkred;
+    background-color: red;
+    color: white;
+    top: 0;
+    right: 0;
+    position: fixed;
+}
+  
+.alert-success {
+    padding: 12px;
+    border-radius: 3px;
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    border: 2px solid rgba(0, 255, 60, 0.532);
+    background-color: rgba(70, 255, 95, 0.68);
+    color: black;
+    top: 0;
+    right: 0;
+    position: fixed;
+}

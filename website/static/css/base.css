@@ -1,0 +1,46 @@
+@import url("constants.css");
+@import url("alert.css");
+
+body {
+    background-color: rgb(35, 35, 35);
+}
+
+div {
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.container {
+    width: 90%;
+}
+
+.nav-main {
+    background-color: var(--primary_color);
+    overflow: hidden;
+}
+
+.nav-main .nav-item {
+    float: left;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+  }
+
+.nav-main .right {
+    float:right
+}
+  
+/* Change the color of links on hover */
+.nav-main .nav-item:hover {
+background-color: #ddd;
+color: black;
+}
+
+/* Add a color to the active/current link */
+.nav-main .nav-item.active {
+background-color: #04AA6D;
+color: white;
+}
