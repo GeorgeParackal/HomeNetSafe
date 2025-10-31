@@ -234,8 +234,11 @@ def auto_detect_cidr() -> str:
         # Assume /24 network
         network = ipaddress.IPv4Network(f"{local_ip}/24", strict=False)
         return str(network)
-    except Exception:
-        return "192.168.1.0/24"  # Fallback
+    
+
+    except Exception as e:
+        print("auto_detect_cidr error:", repr(e))  # or logging.exception(...)
+        return "192.168.1.0/24"
 
 def parse_args():
     """Parse command line arguments"""
