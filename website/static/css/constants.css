@@ -1,0 +1,9 @@
+:root {
+    /* Instantiate variables: "--<variable_name>"*/
+    --primary_color: rgb(104, 169, 201);
+    --secondary_color: white;
+    --primary_font_color: white;
+    --secondary_font_color: white;
+    
+    /* Call variable names: "var(--main_color)" */
+}

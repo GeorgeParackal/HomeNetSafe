@@ -1,0 +1,160 @@
+/* ====== Minimal theme ====== */
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg:#0b0f14;
+    --panel:#0f141b;
+    --ink:#e9f6ff;
+    --muted:#9fc9db;
+    --accent:#00e5ff;
+    --line:rgba(0,229,255,.18);
+    --matrix:#08f76f;
+  }
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #07212c, var(--bg) 60%);color:var(--ink);
+       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial}
+
+  /* subtle grid */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.08;
+    background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px),
+                     linear-gradient(0deg,var(--line) 1px,transparent 1px);
+    background-size:48px 48px}
+
+  .container{max-width:1100px;margin:0 auto;padding:16px}
+
+  /* ====== Top bar ====== */
+  .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(11,15,20,.9),rgba(11,15,20,.65));backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+  /* Small 3D logo (always top-left) */
+  .brand{display:flex;align-items:center;gap:10px}
+  .cube{
+    width:38px;height:38px;border-radius:10px;position:relative;transform-style:preserve-3d;
+    background:linear-gradient(135deg,rgba(0,229,255,.18),rgba(17,37,49,.35));
+    border:1px solid rgba(0,229,255,.45);box-shadow:0 0 24px rgba(0,229,255,.35), inset 0 0 30px rgba(0,229,255,.15);
+    display:grid;place-items:center;color:#032c33;font-weight:900;letter-spacing:.5px;perspective:800px;
+    animation:tilt 6s ease-in-out infinite;
+  }
+  @keyframes tilt{0%{transform:rotateX(12deg) rotateY(-18deg)}50%{transform:rotateX(18deg) rotateY(12deg)}100%{transform:rotateX(12deg) rotateY(-18deg)}}
+  .brand h1{margin:0;font-size:16px;font-weight:800}
+  .muted{color:var(--muted);font-size:12px}
+
+  /* ====== Left sidebar layout ====== */
+  .console-layout{
+    margin-top:20px;
+    display:flex;
+    gap:36px;
+    align-items:flex-start;
+  }
+  .console-sidebar{
+    flex:0 0 240px;
+    background:rgba(6,14,20,.65);
+    border-radius:18px;
+    border:1px solid rgba(0,229,255,.2);
+    box-shadow:0 0 24px rgba(0,229,255,.14);
+    padding:26px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .sidebar-link{
+    width:100%;
+    border-radius:14px;
+    padding:14px 18px;
+    border:1px solid rgba(0,229,255,.18);
+    background:rgba(4,12,18,.6);
+    color:rgba(233,246,255,.72);
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color .2s ease, box-shadow .2s ease, color .2s ease, background .2s ease;
+  }
+  .sidebar-link.is-active{
+    color:#eaffff;
+    border-color:rgba(0,229,255,.6);
+    background:linear-gradient(180deg,rgba(0,229,255,.25),rgba(0,229,255,.08));
+    box-shadow:0 0 24px rgba(0,229,255,.3), inset 0 0 0 1px rgba(0,229,255,.15);
+  }
+  .console-main{flex:1;min-width:0;padding-bottom:150px}
+  .stack-pane{display:none;margin-bottom:28px}
+  .stack-pane.is-visible{display:block}
+
+  @media (max-width:900px){
+    .console-layout{flex-direction:column}
+    .console-sidebar{width:100%;flex:none;flex-direction:row;gap:16px}
+    .sidebar-link{text-align:center;letter-spacing:.12em}
+  }
+
+  /* ====== Cards / Controls (minimal) ====== */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+
+  /* ====== HOME: big centered 3D logo ====== */
+  .hero{
+    min-height:52vh;display:grid;place-items:center;position:relative;margin-top:8px;
+  }
+  .logo3d{
+    width:240px;height:240px;border-radius:28px;display:grid;place-items:center;cursor:pointer;
+    transform-style:preserve-3d;perspective:1200px;
+    background:radial-gradient(120% 120% at 30% 30%, rgba(0,229,255,.22), rgba(0,229,255,.06) 40%, rgba(0,0,0,.0) 60%),
+               linear-gradient(135deg, rgba(0,229,255,.18), rgba(17,37,49,.35));
+    border:1px solid rgba(0,229,255,.45);
+    box-shadow:
+      0 0 36px rgba(0,229,255,.35),
+      inset 0 0 60px rgba(0,229,255,.15),
+      inset 0 0 0 2px rgba(0,229,255,.15);
+    animation:float 7s ease-in-out infinite;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .logo3d:active{transform:scale(.98)}
+  @keyframes float{0%{transform:rotateX(14deg) rotateY(-18deg) translateZ(0)}
+                   50%{transform:rotateX(18deg) rotateY(14deg) translateZ(10px)}
+                   100%{transform:rotateX(14deg) rotateY(-18deg) translateZ(0)}}
+
+  .logo-text{
+    font-weight:900;font-size:28px;letter-spacing:.6px;color:#eaffff;text-shadow:
+      0 0 18px rgba(0,229,255,.45), 0 0 42px rgba(0,229,255,.25);
+    transform:translateZ(30px);
+  }
+  .hero h2{margin:18px 0 0;font-weight:700;text-align:center;color:var(--muted)}
+  .center{display:grid;place-items:center;text-align:center}
+
+  /* layout helpers */
+  .grid{display:grid;gap:14px}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:800px){.grid-2{grid-template-columns:1fr}}
+
+  /* ====== Fullscreen code-rain overlay ====== */
+  #matrixOverlay{
+    position:fixed;inset:0;background:#000;display:none;z-index:50;
+  }
+  #matrixCanvas{width:100%;height:100%;display:block}
+  #matrixText{
+    position:absolute;inset:0;display:grid;place-items:center;z-index:1;
+    font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink);text-shadow:0 0 22px rgba(8,247,111,.75);
+    font-size:clamp(28px,6vw,72px);
+    opacity:0;transition:opacity .5s ease;
+    pointer-events:none;
+  }
+  #matrixText.show{opacity:1}
+
+  /* ====== Terminal-style output for Scan ====== */
+  .terminal{
+    background:#061017;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px;
+    color:#b7f5c8;
+    font:13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-word;
+    box-shadow: inset 0 0 24px rgba(0,229,255,.08);
+  }
+
+  .h2-header {
+    margin-top:0;
+    color:var(--accent);
+    font-size:22px;
+    text-align:center;
+  }
